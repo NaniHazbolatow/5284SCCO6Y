@@ -9,6 +9,9 @@ def animate_wave(wave_data, x, timesteps):
         wave_data (array): each row contains one time step of the wave
         x (array): x-axis data for plot
         timesteps (int): number of time steps 
+
+    Returns:
+        animation
     """    
     fig, ax = plt.subplots()
     line, = ax.plot(x, wave_data[0], 'b')
@@ -22,7 +25,7 @@ def animate_wave(wave_data, x, timesteps):
         return line,
 
     ani = animation.FuncAnimation(fig, update, frames=timesteps, interval=10, blit=True)
-    # plt.show()
+    plt.close(fig)
     return ani
 
 def plotting_snapshots(wave_data, x, snapshot_arr):
