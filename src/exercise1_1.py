@@ -3,6 +3,13 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
 def animate_wave(wave_data, x, timesteps):
+    """Makes an animation of the 1D wave equation
+
+    Args:
+        wave_data (array): each row contains one time step of the wave
+        x (array): x-axis data for plot
+        timesteps (int): number of time steps 
+    """    
     fig, ax = plt.subplots()
     line, = ax.plot(x, wave_data[0], 'b')
     ax.set_ylim(-1.1, 1.1)
@@ -15,9 +22,17 @@ def animate_wave(wave_data, x, timesteps):
         return line,
 
     ani = animation.FuncAnimation(fig, update, frames=timesteps, interval=10, blit=True)
-    plt.show()
+    # plt.show()
+    return ani
 
-def plotting_snapshots(wave_data, x, timesteps, snapshot_arr):
+def plotting_snapshots(wave_data, x, snapshot_arr):
+    """Plots some snapshots of wave animation for selected time steps
+
+    Args:
+        wave_data (array): contains one time step in each row
+        x (array): x-axis data
+        snapshot_arr (list): list of time stamps to be plotted
+    """    
     plt.title('Intermediate Time Steps of the 1D Wave Equation', fontsize=15)
     for i in snapshot_arr:
         plt.plot(x, wave_data[i, :], label=f't = {i}')
@@ -26,7 +41,23 @@ def plotting_snapshots(wave_data, x, timesteps, snapshot_arr):
     plt.legend()
     plt.show()
 
-def calculate_wave(L, c, N, dt, timesteps, initial_cond, animate=False, plot_snapshots=False, snapshot_arr=None):
+def calculate_wave(L, c, N, dt, timesteps, initial_cond):
+    """Calculates the wave equation using the central difference method.
+
+    Args:
+        L (int): length of the string
+        c (int): constant of wave equation
+        N (int): number of intervals
+        dt (float): time increment 
+        timesteps (int): number of time steps
+        initial_cond (int): one of the three initial conditions mentioned in the assignment
+        animate (bool, optional): choice to animate. Defaults to False.
+        plot_snapshots (bool, optional): choice to plot intermediate time steps. Defaults to False.
+        snapshot_arr (list, optional): select which time stamps get plotted ,Defaults to None.
+
+    Returns:
+        array: 2D array containing one time step in each row
+    """    
     dx = L / (N-1)
     C2 = (c*dt/dx)**2
     x = np.linspace(0, L, N)
@@ -48,19 +79,5 @@ def calculate_wave(L, c, N, dt, timesteps, initial_cond, animate=False, plot_sna
     for t in range(1, timesteps - 1):
         wave_data[t+1, 1:N-1] = 2 * wave_data[t, 1:N-1] - wave_data[t-1, 1:N-1] + C2 * (wave_data[t, 2:N] - 2*wave_data[t, 1:N-1] + wave_data[t, 0:N-2])
 
-    if animate:
-        animate_wave(wave_data, x, timesteps)
-    if plot_snapshots:
-        plotting_snapshots(wave_data, x, timesteps, snapshot_arr)
-
-    return wave_data
-
-L = 1
-c = 1
-N = 500
-dt = 0.001
-timesteps = 1000
-initial_cond = 3
-snapshot_arr = [0, 100, 200, 300, 400]
-wave_data = calculate_wave(L, c, N, dt, timesteps, initial_cond, animate=True, plot_snapshots=True, snapshot_arr=snapshot_arr)
+    return wave_data, x
 
