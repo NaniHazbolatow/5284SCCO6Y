@@ -5,6 +5,17 @@ from scipy.special import erfc
 from numba import njit
 
 def analytical_sol(time, x, D, sum_max=50):
+    """Calculates the analytical solution for the concentration
+
+    Args:
+        time (int): time 
+        x (array): x-axis points
+        D (int): diffusion constant
+        sum_max (int, optional): number of elements to sum. Defaults to 50.
+
+    Returns:
+        array: concentration
+    """    
     if time == 0:
         sol = np.zeros(len(x))
         sol[-1] = 1
@@ -17,6 +28,21 @@ def analytical_sol(time, x, D, sum_max=50):
 
 @njit
 def calculate_grid(grid, time, N, D, dx, dt, save_intermediate=False, num_frames=100):
+    """Evolves the grid from the initial condition using finite difference methods and numba for speed
+
+    Args:
+        grid (array): grid with initial condition
+        time (float): max time
+        N (int): grid size 
+        D (int): diffusion constant
+        dx (float): witdh of each cell in the grid
+        dt (float): time increment
+        save_intermediate (bool, optional): option to save intermediate grids for animation. Defaults to False.
+        num_frames (int, optional): number of frames for the animation. Defaults to 100.
+
+    Returns:
+        arrays: grid contains the final grid at t=t_max and all_frames contains all the intermediate grids for the animation.
+    """    
     new_grid = np.zeros((N, N))
     new_grid[0, :] = 1
     num_time_steps = int(time/dt)
@@ -40,6 +66,15 @@ def calculate_grid(grid, time, N, D, dx, dt, save_intermediate=False, num_frames
     return grid, all_frames
 
 def analytical_vs_experimental(test_times, N, dt, dx, D):
+    """Compares and plots the experimental and analytical solutions for the concentration at different times.
+
+    Args:
+        test_times (list): timesteps to measure concentration
+        N (int): grid size
+        dt (float): time increment
+        dx (float): width of cell in grid
+        D (int): diffusion constant
+    """    
     grid = np.zeros((N, N))
     grid[0, :] = 1
     y = np.linspace(0, 1, N)
@@ -49,7 +84,7 @@ def analytical_vs_experimental(test_times, N, dt, dx, D):
         ana_sol = analytical_sol(t, y, D, 50)
         ana_sol_arr[i, :] = ana_sol
 
-        exp_grid = calculate_grid(grid, t, N, D, dx, dt)
+        exp_grid, _ = calculate_grid(grid, t, N, D, dx, dt)
         exp_sol_arr[i, :] = np.flip(exp_grid[:, 0])
 
     for i in range(len(ana_sol_arr)):
@@ -65,10 +100,19 @@ def analytical_vs_experimental(test_times, N, dt, dx, D):
     plt.show()
 
 def plot_heatmap(test_time, N, dt, dx, D):
+    """Plots the 2D domain of the concentration for a selected time
+
+    Args:
+        test_time (float): time at which the grid is plotted
+        N (int): grid size
+        dt (float): time increment
+        dx (float): width of cell in grid
+        D (int): diffusion constant
+    """    
     grid = np.zeros((N, N))
     grid[0, :] = 1
 
-    evolved_grid = calculate_grid(grid, test_time, N, D, dx, dt)
+    evolved_grid, _ = calculate_grid(grid, test_time, N, D, dx, dt)
 
     plt.imshow(evolved_grid, extent=[0, 1, 0, 1])
     plt.xlabel('x', fontsize=14)
@@ -79,6 +123,18 @@ def plot_heatmap(test_time, N, dt, dx, D):
     plt.show()
 
 def animate_diffusion(num_frames, N, dt, dx, D):
+    """Creates an animation of the diffusion equation in 2D
+
+    Args:
+        num_frames (int): number of frames in the animation
+        N (int): grid size
+        dt (float): time increment
+        dx (float): width of cell in grid
+        D (int): diffusion constant
+
+    Returns:
+        animation
+    """    
     grid = np.zeros((N, N))
     grid[0, :] = 1
     _, all_frames = calculate_grid(grid, 1, N, D, dx, dt, True, num_frames)
@@ -97,23 +153,5 @@ def animate_diffusion(num_frames, N, dt, dx, D):
         return [im]
 
     ani = animation.FuncAnimation(fig, update, frames=num_frames, interval=50, blit=True)
-    plt.show()
+    plt.close(fig)
     return ani
- 
-
-N = 100
-dt = 0.00001
-dx = 1/N
-D = 1
-test_times = [0, 0.001, 0.01, 0.1, 1]
-num_frames = 100
-
-if 4*dt*D/(dx**2) <= 1:
-    print('Stable')
-else:
-    raise ValueError('Not stable, reduce dt')
-
-analytical_vs_experimental(test_times, N, dt, dx, D)
-# plot_heatmap(test_times[-1], N, dt, dx, D)
-# animate_diffusion(num_frames, N, dt, dx, D)
-
