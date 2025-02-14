@@ -120,7 +120,7 @@ def compare_methods_to_analytical(N, omega, eps, max_iter):
 
     plt.figure(figsize=(7, 5))
     plt.title('Concentration at Late Times for Different Methods', fontsize=15)
-    plt.plot(y, c_analytical, color='black', ls='dashed', label='Analytical')
+    plt.plot(y, c_analytical, color='black', ls='dotted', label='Analytical', zorder=2.5)
     plt.plot(y, c_jacobi, color='blue', label='Jacobi Iteration')
     plt.plot(y, c_gauss, color='green', label='Gauss-Seidel Iteration')
     plt.plot(y, c_SOR, color='red', label='SOR')

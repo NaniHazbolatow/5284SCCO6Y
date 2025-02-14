@@ -27,7 +27,7 @@ def analytical_sol(time, x, D, sum_max=50):
     return sol
 
 @njit
-def calculate_grid(grid, time, N, D, dx, dt, save_intermediate=False, num_frames=100):
+def calculate_grid(time, N, D, dx, dt, save_intermediate=False, num_frames=100):
     """Evolves the grid from the initial condition using finite difference methods and numba for speed
 
     Args:
@@ -43,8 +43,9 @@ def calculate_grid(grid, time, N, D, dx, dt, save_intermediate=False, num_frames
     Returns:
         arrays: grid contains the final grid at t=t_max and all_frames contains all the intermediate grids for the animation.
     """    
-    new_grid = np.zeros((N, N))
-    new_grid[0, :] = 1
+    grid = np.zeros((N, N))
+    grid[0, :] = 1
+    new_grid = grid.copy()
     num_time_steps = int(time/dt)
     if save_intermediate:
         times_to_save = np.round(np.linspace(0, num_time_steps - 1, num_frames)).astype(np.int32)
@@ -75,8 +76,6 @@ def analytical_vs_experimental(test_times, N, dt, dx, D):
         dx (float): width of cell in grid
         D (int): diffusion constant
     """    
-    grid = np.zeros((N, N))
-    grid[0, :] = 1
     y = np.linspace(0, 1, N)
     ana_sol_arr = np.zeros((len(test_times), N))
     exp_sol_arr = np.zeros((len(test_times), N))
@@ -84,17 +83,18 @@ def analytical_vs_experimental(test_times, N, dt, dx, D):
         ana_sol = analytical_sol(t, y, D, 50)
         ana_sol_arr[i, :] = ana_sol
 
-        exp_grid, _ = calculate_grid(grid, t, N, D, dx, dt)
+        exp_grid, _ = calculate_grid(t, N, D, dx, dt)
         exp_sol_arr[i, :] = np.flip(exp_grid[:, 0])
 
+    plt.figure(figsize=(7, 5))
     for i in range(len(ana_sol_arr)):
         if i == 0:
-            plt.plot(y, ana_sol_arr[i, :], color='black', ls='dashed', zorder=2.5, label='Analytical Solutions')
-        plt.plot(y, ana_sol_arr[i, :], color='black', ls='dashed', zorder=2.5)
+            plt.plot(y, ana_sol_arr[i, :], color='black', ls='dotted', zorder=2.5, label='Analytical Solutions')
+        plt.plot(y, ana_sol_arr[i, :], color='black', ls='dotted', zorder=2.5)
         plt.plot(y, exp_sol_arr[i, :], label=f't = {test_times[i]}')
     plt.title('Analytical vs. Experimental Concentration', fontsize=15)
-    plt.xlabel('x', fontsize=14)
-    plt.ylabel('c(x)', fontsize=14)
+    plt.xlabel('y', fontsize=14)
+    plt.ylabel('c(y)', fontsize=14)
     plt.legend()
     plt.tight_layout()
     plt.show()
@@ -109,11 +109,9 @@ def plot_heatmap(test_time, N, dt, dx, D):
         dx (float): width of cell in grid
         D (int): diffusion constant
     """    
-    grid = np.zeros((N, N))
-    grid[0, :] = 1
+    evolved_grid, _ = calculate_grid(test_time, N, D, dx, dt)
 
-    evolved_grid, _ = calculate_grid(grid, test_time, N, D, dx, dt)
-
+    plt.figure(figsize=(7, 5))
     plt.imshow(evolved_grid, extent=[0, 1, 0, 1])
     plt.xlabel('x', fontsize=14)
     plt.ylabel('y', fontsize=14)
@@ -135,11 +133,9 @@ def animate_diffusion(num_frames, N, dt, dx, D):
     Returns:
         animation
     """    
-    grid = np.zeros((N, N))
-    grid[0, :] = 1
-    _, all_frames = calculate_grid(grid, 1, N, D, dx, dt, True, num_frames)
+    _, all_frames = calculate_grid(1, N, D, dx, dt, True, num_frames)
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(7, 5))
     im = ax.imshow(all_frames[0], extent=[0, 1, 0, 1])
     ax.set_xlabel('x', fontsize=14)
     ax.set_ylabel('y', fontsize=14)
