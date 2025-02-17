@@ -86,15 +86,15 @@ def analytical_vs_experimental(test_times, N, dt, dx, D):
         exp_grid, _ = calculate_grid(t, N, D, dx, dt)
         exp_sol_arr[i, :] = np.flip(exp_grid[:, 0])
 
-    plt.figure(figsize=(7, 5))
+    plt.figure(figsize=(7, 5), dpi=300)
     for i in range(len(ana_sol_arr)):
         if i == 0:
             plt.plot(y, ana_sol_arr[i, :], color='black', ls='dotted', zorder=2.5, label='Analytical Solutions')
         plt.plot(y, ana_sol_arr[i, :], color='black', ls='dotted', zorder=2.5)
         plt.plot(y, exp_sol_arr[i, :], label=f't = {test_times[i]}')
     plt.title('Analytical vs. Experimental Concentration', fontsize=15)
-    plt.xlabel('y', fontsize=14)
-    plt.ylabel('c(y)', fontsize=14)
+    plt.xlabel('y', fontsize=15)
+    plt.ylabel('c(y)', fontsize=15)
     plt.legend()
     plt.tight_layout()
     plt.show()
@@ -109,14 +109,37 @@ def plot_heatmap(test_time, N, dt, dx, D):
         dx (float): width of cell in grid
         D (int): diffusion constant
     """    
-    evolved_grid, _ = calculate_grid(test_time, N, D, dx, dt)
+    evolved_grid_t0, _ = calculate_grid(test_time[0], N, D, dx, dt)
+    evolved_grid_t001, _ = calculate_grid(test_time[1], N, D, dx, dt)
+    evolved_grid_t1, _ = calculate_grid(test_time[2], N, D, dx, dt)
 
-    plt.figure(figsize=(7, 5))
-    plt.imshow(evolved_grid, extent=[0, 1, 0, 1])
-    plt.xlabel('x', fontsize=14)
-    plt.ylabel('y', fontsize=14)
-    plt.title(f'Diffusion in 2D at t = {test_time}', fontsize=15)
-    plt.colorbar(label='Concentration')
+    plt.figure(figsize=(18, 5), dpi=300)
+
+    plt.subplot(1, 3, 1)
+    plt.imshow(evolved_grid_t0, extent=[0, 1, 0, 1])
+    plt.xlabel('x', fontsize=16)
+    plt.ylabel('y', fontsize=16)
+    plt.title(f'Diffusion at t = {test_time[0]}', fontsize=16)
+    cbar = plt.colorbar(label='Concentration')
+    cbar.ax.tick_params(labelsize=14)
+    cbar.set_label('Concentration', fontsize=16)
+
+    plt.subplot(1, 3, 2)
+    plt.imshow(evolved_grid_t001, extent=[0, 1, 0, 1])
+    plt.xlabel('x', fontsize=16)
+    plt.title(f'Diffusion at t = {test_time[1]}', fontsize=16)
+    cbar = plt.colorbar(label='Concentration')
+    cbar.ax.tick_params(labelsize=14)
+    cbar.set_label('Concentration', fontsize=16)
+
+    plt.subplot(1, 3, 3)
+    plt.imshow(evolved_grid_t1, extent=[0, 1, 0, 1])
+    plt.xlabel('x', fontsize=16)
+    plt.title(f'Diffusion at t = {test_time[2]}', fontsize=16)
+    cbar = plt.colorbar(label='Concentration')
+    cbar.ax.tick_params(labelsize=14)
+    cbar.set_label('Concentration', fontsize=16)
+
     plt.tight_layout()
     plt.show()
 
