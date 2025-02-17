@@ -16,8 +16,8 @@ def animate_wave(wave_data, x, timesteps):
     fig, ax = plt.subplots(figsize=(7, 5))
     line, = ax.plot(x, wave_data[0], 'b')
     ax.set_ylim(-1.1, 1.1)
-    ax.set_xlabel('x', fontsize=14)
-    ax.set_ylabel('ψ(x,t)', fontsize=14)
+    ax.set_xlabel('x', fontsize=15)
+    ax.set_ylabel('ψ(x,t)', fontsize=15)
     ax.set_title('1D Wave Equation Animation', fontsize=15)
 
     def update(frame):
@@ -36,12 +36,12 @@ def plotting_snapshots(wave_data, x, snapshot_arr):
         x (array): x-axis data
         snapshot_arr (list): list of time stamps to be plotted
     """    
-    plt.figure(figsize=(7, 5))
+    plt.figure(figsize=(7, 5), dpi=300)
     plt.title('Intermediate Time Steps of the 1D Wave Equation', fontsize=15)
     for i in snapshot_arr:
         plt.plot(x, wave_data[i, :], label=f't = {i}')
-    plt.xlabel('x', fontsize=14)
-    plt.ylabel('ψ(x,t)', fontsize=14)
+    plt.xlabel('x', fontsize=15)
+    plt.ylabel('ψ(x,t)', fontsize=15)
     plt.legend()
     plt.tight_layout()
     plt.show()

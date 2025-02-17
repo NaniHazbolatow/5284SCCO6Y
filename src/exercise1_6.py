@@ -118,7 +118,7 @@ def compare_methods_to_analytical(N, omega, eps, max_iter):
     c_gauss = np.flip(grid_gauss[:, 0])
     c_SOR = np.flip(grid_SOR[:, 0])
 
-    plt.figure(figsize=(7, 5))
+    plt.figure(figsize=(7, 5), dpi=300)
     plt.title('Concentration at Late Times for Different Methods', fontsize=15)
     plt.plot(y, c_analytical, color='black', ls='dotted', label='Analytical', zorder=2.5)
     plt.plot(y, c_jacobi, color='blue', label='Jacobi Iteration')
@@ -145,15 +145,15 @@ def convergence_measure(N, omegas, eps, max_iter):
     _, deltas_SOR_8, iter_SOR_8 = successive_over_relaxation(N, omegas[1], eps, max_iter)
     _, deltas_SOR_95, iter_SOR_95 = successive_over_relaxation(N, omegas[2], eps, max_iter)
 
-    plt.figure(figsize=(7, 5))
+    plt.figure(figsize=(7, 5), dpi=300)
     plt.title('Convergence for Different Numerical Schemes', fontsize=15)
     plt.loglog(iter_SOR_65, deltas_SOR_65, color='gold', label=fr'SOR, $\omega = {{{omegas[0]}}}$')
     plt.loglog(iter_SOR_8, deltas_SOR_8, color='orange', label=fr'SOR, $\omega = {{{omegas[1]}}}$')
     plt.loglog(iter_SOR_95, deltas_SOR_95, color='red', label=fr'SOR, $\omega = {{{omegas[2]}}}$')
     plt.loglog(iter_gauss, deltas_gauss, color='green', label='Gauss-Seidel Iteration')
     plt.loglog(iter_jacobi, deltas_jacobi, color='blue', label='Jacobi Iteration')
-    plt.xlabel('Number of Iterations', fontsize=14)
-    plt.ylabel(r'$\delta$', fontsize=14)
+    plt.xlabel('Number of Iterations', fontsize=15)
+    plt.ylabel(r'$\delta$', fontsize=15)
     plt.legend()
     plt.tight_layout()
     plt.show()
@@ -182,11 +182,11 @@ def optimal_omega(Ns, omegas, eps, max_iter, plot=True):
         optimal_omegas.append(omegas[np.argmin(iters)])
 
     if plot:
-        plt.figure(figsize=(7, 5))
+        plt.figure(figsize=(7, 5), dpi=300)
         plt.title('Optimal Omega for SOR method vs. Grid Size', fontsize=15)
         plt.scatter(Ns, optimal_omegas, color='blue')
-        plt.xlabel('N', fontsize=14)
-        plt.ylabel(r'Optimal $\omega$', fontsize=14)
+        plt.xlabel('N', fontsize=15)
+        plt.ylabel(r'Optimal $\omega$', fontsize=15)
         plt.tight_layout()
         plt.show()
 
@@ -210,7 +210,7 @@ def init_objects(objects, N):
         if i_min > i_max or j_min > j_max:
             raise ValueError('i_min and j_min have to be smaller than i_max and j_max')
 
-        grid[i_min:i_max+1, j_min:j_max+1] = 1
+        grid[int(i_min):int(i_max+1), int(j_min):int(j_max+1)] = 1
     grid[-1, :] = 0
     return grid
 
@@ -274,14 +274,14 @@ def convergence_with_objects(objects, N, omega, eps, max_iter):
     # Without objects
     _, deltas, iter = successive_over_relaxation(N, omega, eps, max_iter)
 
-    plt.figure(figsize=(7, 5))
+    plt.figure(figsize=(7, 5), dpi=300)
     plt.title('Convergence vs. Iterations with Objects', fontsize=15)
     plt.loglog(iter_obj_1, deltas_obj_1, color='red', label='SOR with 1 square')
     plt.loglog(iter_obj_2, deltas_obj_2, color='blue', label='SOR with 2 squares')
     plt.loglog(iter_obj_3, deltas_obj_3, color='green', label='SOR with 3 squares')
     plt.loglog(iter, deltas, color='black', label='SOR without objects')
-    plt.xlabel('Number of Iterations', fontsize=14)
-    plt.ylabel(r'$\delta$', fontsize=14)
+    plt.xlabel('Number of Iterations', fontsize=15)
+    plt.ylabel(r'$\delta$', fontsize=15)
     plt.legend()
     plt.tight_layout()
     plt.show()
@@ -310,48 +310,3 @@ def optimal_omega_with_objects(objects, N, omegas, eps, max_iter):
         optimal_omegas.append(omegas[np.argmin(iters)])
     
         print(f'The optimal omega with {j+1} square(s) is {optimal_omegas[j]}')
-
-
-# N = 100
-# eps = 1e-5
-# max_iter = int(2e4)
-# omegas = np.linspace(1.7, 2, 100)
-# Ns = np.linspace(10, 100, 10)
-
-# # per row: i_min, i_max, j_min, j_max
-# one_square = np.array([[18, 22, 48, 52]])
-
-# two_square = np.array([[18, 22, 31, 35],
-#                        [18, 22, 64, 68]])
-
-# three_square = np.array([[18, 22, 23, 27],
-#                          [18, 22, 48, 52],
-#                          [18, 22, 73, 77]])
-
-# # Compare the linear behaviour of the concentration for multiple iterative schemes
-# compare_methods_to_analytical(N, 1.95, eps, max_iter)
-
-# # The convergence versus the number of iterations for different numerical methods (and different values of omega for SOR)
-# convergence_measure(N, [1.75, 1.85, 1.95], eps, max_iter)
-
-# # Finding the optimal omega for the SOR method and how it changes with N
-# optimal_omega(Ns, omegas, eps, max_iter)
-
-# # The convergence versus the number of iterations for a different number of squares in the grid, N=100, omega=1.95
-# convergence_with_objects([one_square, two_square, three_square], N, 1.95, eps, max_iter)
-
-# # The effect of objects on the optimal value for omega, N = 100
-# opt_omega = optimal_omega([100], omegas, eps, max_iter, plot=False)
-# print(f'The optimal omega without squares is {opt_omega[0]}')
-# optimal_omega_with_objects([one_square, two_square, three_square], N, omegas, eps, max_iter)
-
-# # Plot the final grid with the three squares, N=100, omega=1.95
-# final_grid, _, _ = SOR_object(init_objects(three_square, N), N, 1.95, eps, max_iter)
-# plt.figure(figsize=(7, 5))
-# plt.imshow(final_grid, extent=[0, 1, 0, 1])
-# plt.xlabel('x', fontsize=14)
-# plt.ylabel('y', fontsize=14)
-# plt.title(f'Diffusion in 2D with concentration sinks', fontsize=15)
-# plt.colorbar(label='Concentration')
-# plt.tight_layout()
-# plt.show()
