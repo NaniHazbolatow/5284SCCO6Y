@@ -28,7 +28,7 @@ def animate_wave(wave_data, x, timesteps):
     plt.close(fig)
     return ani
 
-def plotting_snapshots(wave_data, x, snapshot_arr):
+def plotting_snapshots(wave_data1, wave_data2, wave_data3, x, snapshot_arr):
     """Plots some snapshots of wave animation for selected time steps
 
     Args:
@@ -36,13 +36,33 @@ def plotting_snapshots(wave_data, x, snapshot_arr):
         x (array): x-axis data
         snapshot_arr (list): list of time stamps to be plotted
     """    
-    plt.figure(figsize=(7, 5), dpi=300)
-    plt.title('Intermediate Time Steps of the 1D Wave Equation', fontsize=15)
+    plt.figure(figsize=(18, 5), dpi=300)
+    
+    plt.subplot(1, 3, 1)
+    plt.title('Vibrating String with Initial Condition 1', fontsize=16)
     for i in snapshot_arr:
-        plt.plot(x, wave_data[i, :], label=f't = {i}')
-    plt.xlabel('x', fontsize=15)
-    plt.ylabel('ψ(x,t)', fontsize=15)
+        plt.plot(x, wave_data1[i, :], label=f't = {i}')
+    plt.xlabel('x', fontsize=16)
+    plt.ylabel('ψ(x,t)', fontsize=16)
+    plt.tick_params(axis='both', labelsize=12)
     plt.legend()
+
+    plt.subplot(1, 3, 2)
+    plt.title('Vibrating String with Initial Condition 2', fontsize=16)
+    for i in snapshot_arr:
+        plt.plot(x, wave_data2[i, :], label=f't = {i}')
+    plt.xlabel('x', fontsize=16)
+    plt.tick_params(axis='both', labelsize=12)
+    plt.legend()
+
+    plt.subplot(1, 3, 3)
+    plt.title('Vibrating String with Initial Condition 3', fontsize=16)
+    for i in snapshot_arr:
+        plt.plot(x, wave_data3[i, :], label=f't = {i}')
+    plt.xlabel('x', fontsize=16)
+    plt.legend()
+    plt.tick_params(axis='both', labelsize=12)
+
     plt.tight_layout()
     plt.show()
 
@@ -78,7 +98,7 @@ def calculate_wave(L, c, N, dt, timesteps, initial_cond):
         raise ValueError('Invalid initial condition')
 
     # First time step:
-    wave_data[1, 1:N-1] = wave_data[0, 1:N-1] - 0.5 * C2 * (wave_data[0, 2:N] - 2*wave_data[0, 1:N-1] + wave_data[0, 0:N-2])
+    wave_data[1, 1:N-1] = wave_data[0, 1:N-1] + 0.5 * C2 * (wave_data[0, 2:N] - 2*wave_data[0, 1:N-1] + wave_data[0, 0:N-2])
 
     # General update rule
     for t in range(1, timesteps - 1):

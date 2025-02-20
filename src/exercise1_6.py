@@ -126,6 +126,7 @@ def compare_methods_to_analytical(N, omega, eps, max_iter):
     plt.plot(y, c_SOR, color='red', label='SOR')
     plt.xlabel('y', fontsize=14)
     plt.ylabel('Concentration', fontsize=14)
+    plt.tick_params(axis='both', labelsize=12)
     plt.legend()
     plt.tight_layout()
     plt.show()
@@ -141,20 +142,23 @@ def convergence_measure(N, omegas, eps, max_iter):
     """    
     _, deltas_jacobi, iter_jacobi = jacobi_iteration(N, eps, max_iter)
     _, deltas_gauss, iter_gauss = gauss_seidel_iteration(N, eps, max_iter)
-    _, deltas_SOR_65, iter_SOR_65 = successive_over_relaxation(N, omegas[0], eps, max_iter)
-    _, deltas_SOR_8, iter_SOR_8 = successive_over_relaxation(N, omegas[1], eps, max_iter)
+    _, deltas_SOR_75, iter_SOR_75 = successive_over_relaxation(N, omegas[0], eps, max_iter)
+    _, deltas_SOR_85, iter_SOR_85 = successive_over_relaxation(N, omegas[1], eps, max_iter)
     _, deltas_SOR_95, iter_SOR_95 = successive_over_relaxation(N, omegas[2], eps, max_iter)
+
+    print(f'SOR (omega=1.95): {iter_SOR_95[-1]}\nGauss: {iter_gauss[-1]}\nJacobi: {iter_jacobi[-1]}')
 
     plt.figure(figsize=(7, 5), dpi=300)
     plt.title('Convergence for Different Numerical Schemes', fontsize=15)
-    plt.loglog(iter_SOR_65, deltas_SOR_65, color='gold', label=fr'SOR, $\omega = {{{omegas[0]}}}$')
-    plt.loglog(iter_SOR_8, deltas_SOR_8, color='orange', label=fr'SOR, $\omega = {{{omegas[1]}}}$')
+    plt.loglog(iter_SOR_75, deltas_SOR_75, color='gold', label=fr'SOR, $\omega = {{{omegas[0]}}}$')
+    plt.loglog(iter_SOR_85, deltas_SOR_85, color='orange', label=fr'SOR, $\omega = {{{omegas[1]}}}$')
     plt.loglog(iter_SOR_95, deltas_SOR_95, color='red', label=fr'SOR, $\omega = {{{omegas[2]}}}$')
     plt.loglog(iter_gauss, deltas_gauss, color='green', label='Gauss-Seidel Iteration')
     plt.loglog(iter_jacobi, deltas_jacobi, color='blue', label='Jacobi Iteration')
     plt.xlabel('Number of Iterations', fontsize=15)
     plt.ylabel(r'$\delta$', fontsize=15)
     plt.legend()
+    plt.tick_params(axis='both', labelsize=12)
     plt.tight_layout()
     plt.show()
 
@@ -187,6 +191,7 @@ def optimal_omega(Ns, omegas, eps, max_iter, plot=True):
         plt.scatter(Ns, optimal_omegas, color='blue')
         plt.xlabel('N', fontsize=15)
         plt.ylabel(r'Optimal $\omega$', fontsize=15)
+        plt.tick_params(axis='both', labelsize=12)
         plt.tight_layout()
         plt.show()
 
@@ -274,6 +279,9 @@ def convergence_with_objects(objects, N, omega, eps, max_iter):
     # Without objects
     _, deltas, iter = successive_over_relaxation(N, omega, eps, max_iter)
 
+    print(f'SOR (0 sinks): {iter[-1]}\nSOR (1 sink): {iter_obj_1[-1]}\nSOR (2 sink): {iter_obj_2[-1]}\nSOR (3 sink): {iter_obj_3[-1]}')
+
+
     plt.figure(figsize=(7, 5), dpi=300)
     plt.title('Convergence vs. Iterations with Objects', fontsize=15)
     plt.loglog(iter_obj_1, deltas_obj_1, color='red', label='SOR with 1 square')
@@ -282,6 +290,7 @@ def convergence_with_objects(objects, N, omega, eps, max_iter):
     plt.loglog(iter, deltas, color='black', label='SOR without objects')
     plt.xlabel('Number of Iterations', fontsize=15)
     plt.ylabel(r'$\delta$', fontsize=15)
+    plt.tick_params(axis='both', labelsize=12)
     plt.legend()
     plt.tight_layout()
     plt.show()
