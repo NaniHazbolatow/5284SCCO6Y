@@ -17,13 +17,14 @@ def analytical_sol(time, x, D, sum_max=50):
         array: concentration
     """    
     if time == 0:
-        sol = np.zeros(len(x))
+        sol = np.zeros_like(x)
         sol[-1] = 1
         return sol
     
-    sol = np.zeros(len(x))
+    sol = np.zeros_like(x)
+    sqrt_term = (2 * np.sqrt(D*time))
     for i in range(sum_max):
-        sol += erfc((1 - x + 2 * i)/(2 * np.sqrt(D*time))) - erfc((1 + x + 2 * i)/(2 * np.sqrt(D*time)))
+        sol += erfc((1 - x + 2 * i)/sqrt_term) - erfc((1 + x + 2 * i)/sqrt_term)
     return sol
 
 @njit
@@ -44,27 +45,38 @@ def calculate_grid(time, N, D, dx, dt, save_intermediate=False, num_frames=100):
         arrays: grid contains the final grid at t=t_max and all_frames contains all the intermediate grids for the animation.
     """    
     grid = np.zeros((N, N))
-    grid[0, :] = 1
+    grid[0, :] = 1.0
     new_grid = grid.copy()
-    num_time_steps = int(time/dt)
+    num_time_steps = int(time / dt)
+    coeff = dt * D / (dx ** 2)
+
+    all_frames = None
     if save_intermediate:
         times_to_save = np.round(np.linspace(0, num_time_steps - 1, num_frames)).astype(np.int32)
         all_frames = np.zeros((num_frames, N, N))
+    
+    # Precompute for periodic boundaries
+    left_indices = np.empty(N, dtype=np.int32)
+    right_indices = np.empty(N, dtype=np.int32)
+    for j in range(N):
+        left_indices[j] = j - 1 if j - 1 >= 0 else N - 1
+        right_indices[j] = j + 1 if j + 1 < N else 0
 
     frame_index = 0
     for t in range(num_time_steps):
-
-        for i in range(1, N-1):
+        for i in range(1, N - 1):
             for j in range(N):
-                new_grid[i, j] = grid[i, j] + dt*D/(dx**2) * (grid[i+1, j] + grid[i-1, j] + grid[i, (j+1)%N] + grid[i, (j-1)%N] - 4*grid[i, j])
-
-        grid[:] = new_grid
-
+                new_grid[i, j] = grid[i, j] + coeff * (
+                    grid[i + 1, j] + grid[i - 1, j] +
+                    grid[i, right_indices[j]] + grid[i, left_indices[j]] -
+                    4 * grid[i, j]
+                )
+        grid[:, :] = new_grid[:, :]
         if save_intermediate and t in times_to_save:
-            all_frames[frame_index] = np.copy(grid)
+            all_frames[frame_index] = grid.copy()
             frame_index += 1
-
     return grid, all_frames
+
 
 def analytical_vs_experimental(test_times, N, dt, dx, D):
     """Compares and plots the experimental and analytical solutions for the concentration at different times.
@@ -100,52 +112,30 @@ def analytical_vs_experimental(test_times, N, dt, dx, D):
     plt.tight_layout()
     plt.show()
 
-def plot_heatmap(test_time, N, dt, dx, D):
-    """Plots the 2D domain of the concentration for a selected time
-
+def plot_heatmaps(times: list, grids: list, titles: list, figsize=(18, 5), dpi=300):
+    """
+    Plots multiple heatmaps side-by-side.
+    
     Args:
-        test_time (float): time at which the grid is plotted
-        N (int): grid size
-        dt (float): time increment
-        dx (float): width of cell in grid
-        D (int): diffusion constant
-    """    
-    evolved_grid_t0, _ = calculate_grid(test_time[0], N, D, dx, dt)
-    evolved_grid_t001, _ = calculate_grid(test_time[1], N, D, dx, dt)
-    evolved_grid_t1, _ = calculate_grid(test_time[2], N, D, dx, dt)
-
-    plt.figure(figsize=(18, 5), dpi=300)
-
-    plt.subplot(1, 3, 1)
-    plt.imshow(evolved_grid_t0, extent=[0, 1, 0, 1])
-    plt.xlabel('x', fontsize=16)
-    plt.ylabel('y', fontsize=16)
-    plt.title(f'Diffusion at t = {test_time[0]}', fontsize=16)
-    plt.tick_params(axis='both', labelsize=12)
-    cbar = plt.colorbar(label='Concentration')
-    cbar.ax.tick_params(labelsize=14)
-    cbar.set_label('Concentration', fontsize=16)
-
-    plt.subplot(1, 3, 2)
-    plt.imshow(evolved_grid_t001, extent=[0, 1, 0, 1])
-    plt.xlabel('x', fontsize=16)
-    plt.title(f'Diffusion at t = {test_time[1]}', fontsize=16)
-    plt.tick_params(axis='both', labelsize=12)
-    cbar = plt.colorbar(label='Concentration')
-    cbar.ax.tick_params(labelsize=14)
-    cbar.set_label('Concentration', fontsize=16)
-
-    plt.subplot(1, 3, 3)
-    plt.imshow(evolved_grid_t1, extent=[0, 1, 0, 1])
-    plt.xlabel('x', fontsize=16)
-    plt.title(f'Diffusion at t = {test_time[2]}', fontsize=16)
-    plt.tick_params(axis='both', labelsize=12)
-    cbar = plt.colorbar(label='Concentration')
-    cbar.ax.tick_params(labelsize=14)
-    cbar.set_label('Concentration', fontsize=16)
-
+        times (list): List of times for labeling.
+        grids (list): List of 2D numpy arrays to plot.
+        titles (list): Titles for each subplot.
+        figsize (tuple): Figure size.
+        dpi (int): Dots per inch for the figure.
+    """
+    n = len(grids)
+    fig, axs = plt.subplots(1, n, figsize=figsize, dpi=dpi)
+    for i in range(n):
+        im = axs[i].imshow(grids[i], extent=[0, 1, 0, 1])
+        axs[i].set_xlabel('x', fontsize=16)
+        axs[i].set_title(titles[i], fontsize=16)
+        axs[i].tick_params(axis='both', labelsize=12)
+        cbar = plt.colorbar(im, ax=axs[i])
+        cbar.ax.tick_params(labelsize=14)
+        cbar.set_label('Concentration', fontsize=16)
     plt.tight_layout()
     plt.show()
+
 
 def animate_diffusion(num_frames, N, dt, dx, D):
     """Creates an animation of the diffusion equation in 2D

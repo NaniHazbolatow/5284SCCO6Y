@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+from numba import njit
 
 def animate_wave(wave_data, x, timesteps):
     """Makes an animation of the 1D wave equation
@@ -28,81 +29,85 @@ def animate_wave(wave_data, x, timesteps):
     plt.close(fig)
     return ani
 
-def plotting_snapshots(wave_data1, wave_data2, wave_data3, x, snapshot_arr):
-    """Plots some snapshots of wave animation for selected time steps
+def plotting_snapshots(wave_data_list, titles, x, snapshot_arr, figsize = None):
+    """
+    Plots snapshots of the wave data for selected time steps.
 
     Args:
-        wave_data (array): contains one time step in each row
-        x (array): x-axis data
-        snapshot_arr (list): list of time stamps to be plotted
-    """    
-    plt.figure(figsize=(18, 5), dpi=300)
-    
-    plt.subplot(1, 3, 1)
-    plt.title('Vibrating String with Initial Condition 1', fontsize=16)
-    for i in snapshot_arr:
-        plt.plot(x, wave_data1[i, :], label=f't = {i}')
-    plt.xlabel('x', fontsize=16)
-    plt.ylabel('ψ(x,t)', fontsize=16)
-    plt.tick_params(axis='both', labelsize=12)
-    plt.legend()
+        wave_data_list: List of 2D arrays, each representing wave data from a different initial condition.
+        titles: List of titles for each subplot.
+        x: 1D array for x-axis data.
+        snapshot_arr: List of time steps to plot.
+        figsize: Figure size. Defaults to (6 * number of subplots, 5).
+    """
+    n_plots = len(wave_data_list)
+    if figsize is None:
+        figsize = (6 * n_plots, 5)
+    fig, axs = plt.subplots(1, n_plots, figsize=figsize, dpi=300)
 
-    plt.subplot(1, 3, 2)
-    plt.title('Vibrating String with Initial Condition 2', fontsize=16)
-    for i in snapshot_arr:
-        plt.plot(x, wave_data2[i, :], label=f't = {i}')
-    plt.xlabel('x', fontsize=16)
-    plt.tick_params(axis='both', labelsize=12)
-    plt.legend()
+    # If we want only one plot, make sure this works
+    if n_plots == 1:
+        axs = [axs]
 
-    plt.subplot(1, 3, 3)
-    plt.title('Vibrating String with Initial Condition 3', fontsize=16)
-    for i in snapshot_arr:
-        plt.plot(x, wave_data3[i, :], label=f't = {i}')
-    plt.xlabel('x', fontsize=16)
-    plt.legend()
-    plt.tick_params(axis='both', labelsize=12)
-
+    for ax, wave_data, title in zip(axs, wave_data_list, titles):
+        for t in snapshot_arr:
+            ax.plot(x, wave_data[t], label=f't = {t}')
+        ax.set_title(title, fontsize=16)
+        ax.set_xlabel('x', fontsize=16)
+        ax.tick_params(axis='both', labelsize=12)
+        ax.legend()
     plt.tight_layout()
     plt.show()
 
+@njit
 def calculate_wave(L, c, N, dt, timesteps, initial_cond):
     """Calculates the wave equation using the central difference method.
 
     Args:
-        L (int): length of the string
-        c (int): constant of wave equation
-        N (int): number of intervals
-        dt (float): time increment 
-        timesteps (int): number of time steps
-        initial_cond (int): one of the three initial conditions mentioned in the assignment
-        animate (bool, optional): choice to animate. Defaults to False.
-        plot_snapshots (bool, optional): choice to plot intermediate time steps. Defaults to False.
-        snapshot_arr (list, optional): select which time stamps get plotted ,Defaults to None.
+        L (float): length of the string.
+        c (float): wave speed constant.
+        N (int): number of spatial points.
+        dt (float): time increment.
+        timesteps (int): number of time steps.
+        initial_cond (int): one of the three initial conditions.
+            1: psi(x,0) = sin(2πx) for interior points.
+            2: psi(x,0) = sin(5πx) for interior points.
+            3: psi(x,0) = sin(5πx) for x in (1/5, 2/5), 0 elsewhere.
 
     Returns:
-        array: 2D array containing one time step in each row
-    """    
-    dx = L / (N-1)
-    C2 = (c*dt/dx)**2
+        tuple: (wave_data, x) where wave_data is a 2D array (time steps × spatial points)
+               and x is the spatial grid.
+    """
+    dx = L / (N - 1)
+    C2 = (c * dt / dx) ** 2
     x = np.linspace(0, L, N)
     wave_data = np.zeros((timesteps, N))
 
     if initial_cond == 1:
-        wave_data[0, 1:N-1] = np.sin(2*np.pi*x[1:N-1])
+        # Initial condition: psi(x,0) = sin(2πx) for interior points.
+        wave_data[0, 1:-1] = np.sin(2 * np.pi * x[1:-1])
     elif initial_cond == 2:
-        wave_data[0, 1:N-1] = np.sin(5*np.pi*x[1:N-1])
+        # Initial condition: psi(x,0) = sin(5πx) for interior points.
+        wave_data[0, 1:-1] = np.sin(5 * np.pi * x[1:-1])
     elif initial_cond == 3:
-        wave_data[0, np.where((x > 1/5) & (x < 2/5))] = np.sin(5*np.pi*x[np.where((x > 1/5) & (x < 2/5))])
+        # Initial condition: psi(x,0) = sin(5πx) for 1/5 < x < 2/5, 0 elsewhere.
+        mask = (x > 1/5) & (x < 2/5)
+        wave_data[0, mask] = np.sin(5 * np.pi * x[mask])
     else:
-        raise ValueError('Invalid initial condition')
+        raise ValueError("Invalid initial condition")
 
-    # First time step:
-    wave_data[1, 1:N-1] = wave_data[0, 1:N-1] + 0.5 * C2 * (wave_data[0, 2:N] - 2*wave_data[0, 1:N-1] + wave_data[0, 0:N-2])
+    # Compute the first time step.
+    wave_data[1, 1:-1] = wave_data[0, 1:-1] + 0.5 * C2 * (
+        wave_data[0, 2:] - 2 * wave_data[0, 1:-1] + wave_data[0, :-2]
+    )
 
-    # General update rule
+    # General updates
     for t in range(1, timesteps - 1):
-        wave_data[t+1, 1:N-1] = 2 * wave_data[t, 1:N-1] - wave_data[t-1, 1:N-1] + C2 * (wave_data[t, 2:N] - 2*wave_data[t, 1:N-1] + wave_data[t, 0:N-2])
+        wave_data[t + 1, 1:-1] = (
+            2 * wave_data[t, 1:-1]
+            - wave_data[t - 1, 1:-1]
+            + C2 * (wave_data[t, 2:] - 2 * wave_data[t, 1:-1] + wave_data[t, :-2])
+        )
 
     return wave_data, x
 
