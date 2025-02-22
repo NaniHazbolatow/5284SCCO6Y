@@ -39,29 +39,29 @@ def plotting_snapshots(wave_data1, wave_data2, wave_data3, x, snapshot_arr):
     plt.figure(figsize=(18, 5), dpi=300)
     
     plt.subplot(1, 3, 1)
-    plt.title('Vibrating String with Initial Condition 1', fontsize=16)
+    plt.title('Vibrating String with Initial Condition 1', fontsize=17)
     for i in snapshot_arr:
         plt.plot(x, wave_data1[i, :], label=f't = {i}')
-    plt.xlabel('x', fontsize=16)
-    plt.ylabel('ψ(x,t)', fontsize=16)
-    plt.tick_params(axis='both', labelsize=12)
+    plt.xlabel('x', fontsize=17)
+    plt.ylabel('ψ(x,t)', fontsize=17)
+    plt.tick_params(axis='both', labelsize=13)
     plt.legend()
 
     plt.subplot(1, 3, 2)
-    plt.title('Vibrating String with Initial Condition 2', fontsize=16)
+    plt.title('Vibrating String with Initial Condition 2', fontsize=17)
     for i in snapshot_arr:
         plt.plot(x, wave_data2[i, :], label=f't = {i}')
-    plt.xlabel('x', fontsize=16)
-    plt.tick_params(axis='both', labelsize=12)
+    plt.xlabel('x', fontsize=17)
+    plt.tick_params(axis='both', labelsize=13)
     plt.legend()
 
     plt.subplot(1, 3, 3)
-    plt.title('Vibrating String with Initial Condition 3', fontsize=16)
+    plt.title('Vibrating String with Initial Condition 3', fontsize=17)
     for i in snapshot_arr:
         plt.plot(x, wave_data3[i, :], label=f't = {i}')
-    plt.xlabel('x', fontsize=16)
+    plt.xlabel('x', fontsize=17)
     plt.legend()
-    plt.tick_params(axis='both', labelsize=12)
+    plt.tick_params(axis='both', labelsize=13)
 
     plt.tight_layout()
     plt.show()
