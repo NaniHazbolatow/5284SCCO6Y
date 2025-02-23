@@ -112,7 +112,7 @@ def analytical_vs_experimental(test_times, N, dt, dx, D):
     plt.tight_layout()
     plt.show()
 
-def plot_heatmaps(times: list, grids: list, titles: list, figsize=(18, 5), dpi=300):
+def plot_heatmap(times: list, grids: list, titles: list, figsize=(18, 5), dpi=300):
     """
     Plots multiple heatmaps side-by-side.
     
