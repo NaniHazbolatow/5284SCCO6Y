@@ -52,9 +52,9 @@ def plotting_snapshots(wave_data_list, titles, x, snapshot_arr, figsize = None):
     for ax, wave_data, title in zip(axs, wave_data_list, titles):
         for t in snapshot_arr:
             ax.plot(x, wave_data[t], label=f't = {t}')
-        ax.set_title(title, fontsize=16)
-        ax.set_xlabel('x', fontsize=16)
-        ax.tick_params(axis='both', labelsize=12)
+        ax.set_title(title, fontsize=17)
+        ax.set_xlabel('x', fontsize=17)
+        ax.tick_params(axis='both', labelsize=13)
         ax.legend()
     plt.tight_layout()
     plt.show()
