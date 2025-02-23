@@ -112,30 +112,41 @@ def analytical_vs_experimental(test_times, N, dt, dx, D):
     plt.tight_layout()
     plt.show()
 
-def plot_heatmap(times: list, grids: list, titles: list, figsize=(18, 5), dpi=300):
+
+def plot_heatmap(test_times: list, N: int, dt: float, dx: float, D: float):
     """
-    Plots multiple heatmaps side-by-side.
+    Computes the grid for each time in test_times and plots them as heatmaps.
     
     Args:
-        times (list): List of times for labeling.
-        grids (list): List of 2D numpy arrays to plot.
-        titles (list): Titles for each subplot.
-        figsize (tuple): Figure size.
-        dpi (int): Dots per inch for the figure.
+        test_times (list of float): List of simulation times.
+        N (int): Grid size.
+        dt (float): Time step.
+        dx (float): Spatial resolution.
+        D (float): Diffusion constant.
     """
-    n = len(grids)
-    fig, axs = plt.subplots(1, n, figsize=figsize, dpi=dpi)
-    for i in range(n):
-        im = axs[i].imshow(grids[i], extent=[0, 1, 0, 1])
-        axs[i].set_xlabel('x', fontsize=17)
-        axs[i].set_title(titles[i], fontsize=17)
-        axs[i].tick_params(axis='both', labelsize=13)
-        cbar = plt.colorbar(im, ax=axs[i])
+    # Pre-compute the grids for the specified times
+    grids = []
+    for t in test_times:
+        grid, _ = calculate_grid(t, N, D, dx, dt, save_intermediate=False)
+        grids.append(grid)
+    
+    num_plots = len(test_times)
+    fig, axes = plt.subplots(1, num_plots, figsize=(6 * num_plots, 5), dpi=300)
+    if num_plots == 1:
+        axes = [axes]  # Ensure axes is iterable
+
+    for ax, grid, t in zip(axes, grids, test_times):
+        im = ax.imshow(grid, extent=[0, 1, 0, 1])
+        ax.set_xlabel('x', fontsize=17)
+        ax.set_ylabel('y', fontsize=17)
+        ax.set_title(f'Diffusion at t = {t}', fontsize=16)
+        ax.tick_params(axis='both', labelsize=13)
+        cbar = plt.colorbar(im, ax=ax)
         cbar.ax.tick_params(labelsize=14)
         cbar.set_label('Concentration', fontsize=16)
+
     plt.tight_layout()
     plt.show()
-
 
 def animate_diffusion(num_frames, N, dt, dx, D):
     """Creates an animation of the diffusion equation in 2D
