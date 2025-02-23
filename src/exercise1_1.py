@@ -54,6 +54,7 @@ def plotting_snapshots(wave_data_list, titles, x, snapshot_arr, figsize = None):
             ax.plot(x, wave_data[t], label=f't = {t}')
         ax.set_title(title, fontsize=17)
         ax.set_xlabel('x', fontsize=17)
+        ax.set_ylabel('ψ(x,t)', fontsize=17)
         ax.tick_params(axis='both', labelsize=13)
         ax.legend()
     plt.tight_layout()
