@@ -137,7 +137,9 @@ class DLA2D:
             if plot_interval > 0 and (step + 1) % plot_interval == 0:
                 print(f"Plotting at step {step + 1} with {self.eta}")
                 self.plot_state(step + 1)
-        self.termination_step = growth_steps 
+
+        if self.termination_step < 0:
+            self.termination_step = growth_steps 
 
 
 def box_counting(grid):
