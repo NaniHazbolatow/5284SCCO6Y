@@ -58,6 +58,7 @@ class DLA2D:
 
         self.eta = eta
         self.termination = False
+        self.termination_step = -1
         
     def update_nutrient_grid(self, omega=1.5, tol=1e-5, max_iter=10000):
         sinks = self.cluster_grid == 1  
@@ -124,6 +125,7 @@ class DLA2D:
     def growth(self, growth_steps, plot_interval):
         for step in range(growth_steps):
             if self.termination:
+                self.termination_step = step + 1
                 print(f"Termination at step {step + 1} with {self.eta}")
                 if plot_interval > 0:
                     self.plot_state(step+1)
@@ -135,6 +137,7 @@ class DLA2D:
             if plot_interval > 0 and (step + 1) % plot_interval == 0:
                 print(f"Plotting at step {step + 1} with {self.eta}")
                 self.plot_state(step + 1)
+        self.termination_step = growth_steps 
 
 
 def box_counting(grid):
@@ -230,7 +233,7 @@ def plot_many_dla(grid_size, etas, growth_steps):
         ax.set_title(f"η = {eta}")
         ax.axis("off")
 
-          # Plot nutrient grid
+        # Plot nutrient grid
         ax.imshow(model.nutrient_grid, cmap="inferno", origin="lower")
 
         # Overlay particle grid with a white mask
@@ -243,7 +246,7 @@ def plot_many_dla(grid_size, etas, growth_steps):
         # Overlay white clusters using grayscale with full opacity on clusters
         ax.imshow(cluster_overlay, cmap="gray", origin="lower", alpha=alpha_mask)
 
-        ax.set_title(f"η = {eta:.2f}")
+        ax.set_title(f"η = {eta:.2f}, Steps = {model.termination_step}")
 
     plt.tight_layout()
     plt.show()
