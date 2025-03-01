@@ -6,7 +6,6 @@ from scipy.optimize import curve_fit
 
 @numba.jit(nopython=True, parallel=True)
 def solve_laplace(grid, sinks, omega=1.7, tol=1e-5, max_iter=10000):
-    """Optimized Successive Over-Relaxation (SOR) solver for Laplace equation."""
     ny, nx = grid.shape
     residual = tol + 1  # Ensure at least one iteration runs
 
@@ -23,7 +22,7 @@ def solve_laplace(grid, sinks, omega=1.7, tol=1e-5, max_iter=10000):
         for parity in range(2):  # 0 = red, 1 = black
             for i in numba.prange(1, ny - 1):
                 for j in range(nx):
-                    if (i + j) % 2 != parity or sinks[i, j]:  
+                    if (i + j) % 2 != parity or sinks[i, j]:
                         continue  # Skip sinks and enforce Red-Black pattern
 
                     # Neighboring values
@@ -35,26 +34,28 @@ def solve_laplace(grid, sinks, omega=1.7, tol=1e-5, max_iter=10000):
                     # SOR Update
                     old_value = grid[i, j]
                     new_value = (1 - omega) * old_value + omega * (north + south + west + east) / 4.0
-                    new_value = max(0.0, new_value) 
+                    new_value = max(0.0, new_value)
                     residual = max(residual, abs(new_value - old_value))
                     grid[i, j] = new_value  # In-place update
 
         if residual < tol:
-            break  # Convergence reached
+            # Return both the grid and the number of iterations (iteration+1)
+            return grid, iteration + 1
 
-    return grid  # Return updated grid
+    return grid, max_iter  
+
 
 
 class DLA2D:
     def __init__(self, grid: tuple, eta: float):
         self.nutrient_grid = np.zeros(shape=grid)
         self.cluster_grid = np.zeros_like(self.nutrient_grid)
-        self.nutrient_grid[-1, :] = 1
+        self.nutrient_grid[-1, :] = 1.0
 
         seed_position = grid[0] // 2
 
         self.cluster_grid[0, seed_position] = 1
-        self.nutrient_grid[0, seed_position] = 0 # Create a sink
+        self.nutrient_grid[0, seed_position] = 0.0 # Create a sink
 
         self.eta = eta
         self.termination = False
@@ -62,8 +63,8 @@ class DLA2D:
         
     def update_nutrient_grid(self, omega=1.5, tol=1e-5, max_iter=10000):
         sinks = self.cluster_grid == 1  
-        self.nutrient_grid = solve_laplace(self.nutrient_grid, sinks, omega=omega, tol=tol, max_iter=max_iter)
-    
+        self.nutrient_grid, iter_count = solve_laplace(self.nutrient_grid, sinks, omega=omega, tol=tol, max_iter=max_iter)
+        return iter_count
 
     def get_growth_candidates(self):
         grid = self.cluster_grid
@@ -122,16 +123,18 @@ class DLA2D:
         plt.title(f"Nutrient and Particle Grid with η = {self.eta:.2f}")
         plt.show()
 
-    def growth(self, growth_steps, plot_interval):
+    def growth(self, growth_steps, plot_interval, omega=1.5, tol=1e-5, max_iter=10000):
         for step in range(growth_steps):
+            # Termination occured in the last step, so offset step by 1
             if self.termination:
-                self.termination_step = step + 1
-                print(f"Termination at step {step + 1} with {self.eta}")
+                self.termination_step = step 
+                print(f"Termination at step {step} with {self.eta}")
+                # This will plot the final output
                 if plot_interval > 0:
-                    self.plot_state(step+1)
+                    self.plot_state(step)
                 break
 
-            self.update_nutrient_grid()
+            self.update_nutrient_grid(omega=omega, tol=tol, max_iter=max_iter)
             self.choose_growth_candidate()
             
             if plot_interval > 0 and (step + 1) % plot_interval == 0:
@@ -252,3 +255,43 @@ def plot_many_dla(grid_size, etas, growth_steps):
 
     plt.tight_layout()
     plt.show()
+
+
+def growth_iterations(grid_shape, eta, omega, growth_steps=50, tol=1e-5, max_iter=10000):
+    """
+    Runs a DLA simulation for a given number of growth steps with specified omega and eta.
+    Records the SOR iteration count for each nutrient update.
+    Returns the average iteration count and the list of iteration counts.
+    """
+    simulation = DLA2D(grid_shape, eta)
+    iter_counts = []
+    for step in range(growth_steps):
+        iter_count = simulation.update_nutrient_grid(omega=omega, tol=tol, max_iter=max_iter)
+        iter_counts.append(iter_count)
+        simulation.choose_growth_candidate()
+        if simulation.termination:
+            print(f"Terminated at step {step + 1} for η = {eta}, ω = {omega}")
+            break
+    avg_iter = np.mean(iter_counts)
+    return avg_iter, iter_counts
+
+# Experiment function that loops over both eta and omega values.
+def optimal_omega_eta(grid_shape, eta_values, omega_values, growth_steps=50, tol=1e-5, max_iter=10000):
+    """
+    For a given grid shape, loops over a range of eta and omega values,
+    running the full growth simulation and recording the average SOR iterations.
+    
+    Returns:
+        avg_iters: 2D numpy array of shape (len(eta_values), len(omega_values)) with average iterations.
+    """
+    avg_iters = np.zeros((len(eta_values), len(omega_values)))
+    for i, eta in enumerate(eta_values):
+        for j, omega in enumerate(omega_values):
+            avg_iter, _ = growth_iterations(
+                grid_shape, eta, omega, growth_steps=growth_steps, tol=tol, max_iter=max_iter
+            )
+            avg_iters[i, j] = avg_iter
+            print(f"η: {eta:.3f}, ω: {omega:.3f} -> Average iterations: {avg_iter:.2f}")
+    return avg_iters
+
+    
