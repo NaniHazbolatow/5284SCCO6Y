@@ -1,10 +1,6 @@
-import numpy as np
-
-
 import numba
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
 
 @numba.jit(nopython=True, parallel=True)
 def solve_laplace(grid, sinks, omega=1.7, tol=1e-5, max_iter=10000):
