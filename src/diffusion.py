@@ -1,3 +1,5 @@
+import numpy as np
+
 
 import numba
 import numpy as np
@@ -314,8 +316,9 @@ def stochastic_runs_fd(eta_values, runs, grid_size=(100,100)):
         fractal_dimensions = []
 
         print(f"Computing fractal dimension for η = {eta:.2f} over {runs} runs...")
-
+        
         for run in range(runs):
+            np.random.seed(run)
             print(f"  Run {run+1}/{runs} for η = {eta:.2f}")
             dla = DLA2D(grid=grid_size, eta=eta)
             dla.growth(growth_steps=10000, plot_interval=-1)  # Run until termination
