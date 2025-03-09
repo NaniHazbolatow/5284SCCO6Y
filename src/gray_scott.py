@@ -90,6 +90,8 @@ def plot_gray_scott(times, N, dx, dt, params):
     plt.tight_layout()
     plt.show()
 
+    return final_grid_3
+
 
 @njit(parallel=True)
 def update_grid(grid, N, dx, dt, D_u, D_v, f, k):
