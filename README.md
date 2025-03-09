@@ -17,3 +17,4 @@ The main python notebook contains all the plots and animations created using the
 *  [diffusion.py](src/diffusion.py): contains all the code to answer sub-assingment 2.1, which explores diffusion-limited aggregation.
 *  [mc_dla.py](src/mc_dla.py): contains all the code to answer sub-assignment 2.2, which explores diffusion-limited aggregation with a Monte Carlo approach.
 *  [gray_scott.py](src/gray_scott.py): contains all the code to answer sub-assignment 2.3, which explores the Gray-Scott model with finite difference methods.
+The animations of the gray-scott model can be found in the last four cells of the notebook. The user may vary the parameter combinations to obtain different patterns. An example of most patterns is listed in (J. E. Pearson, Science, Vol 261, 5118, 189-192 (1993)). 
