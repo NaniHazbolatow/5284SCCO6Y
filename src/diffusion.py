@@ -6,6 +6,19 @@ from scipy.optimize import curve_fit
 
 @numba.jit(nopython=True, parallel=True)
 def solve_laplace(grid, sinks, omega=1.7, tol=1e-5, max_iter=10000):
+    """
+    Solves the Laplace equation using Successive Over-Relaxation (SOR) with Red-Black Gauss-Seidel updates.
+    
+    Parameters:
+        grid (np.ndarray): Initial grid with boundary conditions.
+        sinks (np.ndarray): Boolean mask indicating sink locations.
+        omega (float): Relaxation parameter for SOR.
+        tol (float): Convergence tolerance.
+        max_iter (int): Maximum number of iterations.
+    
+    Returns:
+        tuple: Updated grid and the number of iterations performed.
+    """
     ny, nx = grid.shape
     residual = tol + 1  # Ensure at least one iteration runs
 
@@ -47,7 +60,24 @@ def solve_laplace(grid, sinks, omega=1.7, tol=1e-5, max_iter=10000):
 
 
 class DLA2D:
+    """
+    Diffusion-Limited Aggregation (DLA) simulation in 2D.
+    
+    Attributes:
+        nutrient_grid (np.ndarray): The grid representing nutrient concentration.
+        cluster_grid (np.ndarray): The grid representing the aggregated particles.
+        eta (float): Growth bias exponent.
+        termination (bool): Indicates whether growth has reached the top boundary.
+        termination_step (int): Step at which growth terminated.
+    """
     def __init__(self, grid: tuple, eta: float):
+        """
+        Initializes a DLA simulation on a given grid size.
+        
+        Parameters:
+            grid (tuple): Tuple specifying grid dimensions (ny, nx).
+            eta (float): Growth bias exponent.
+        """
         self.nutrient_grid = np.zeros(shape=grid)
         self.cluster_grid = np.zeros_like(self.nutrient_grid)
         self.nutrient_grid[-1, :] = 1.0
@@ -62,11 +92,28 @@ class DLA2D:
         self.termination_step = -1
         
     def update_nutrient_grid(self, omega=1.5, tol=1e-5, max_iter=10000):
+        """
+        Updates the nutrient grid by solving the Laplace equation.
+        
+        Parameters:
+            omega (float): Relaxation parameter for SOR.
+            tol (float): Convergence tolerance.
+            max_iter (int): Maximum number of iterations.
+        
+        Returns:
+            int: Number of iterations performed during the update.
+        """
         sinks = self.cluster_grid == 1  
         self.nutrient_grid, iter_count = solve_laplace(self.nutrient_grid, sinks, omega=omega, tol=tol, max_iter=max_iter)
         return iter_count
 
     def get_growth_candidates(self):
+        """
+        Identifies potential growth sites adjacent to existing clusters.
+        
+        Returns:
+            np.ndarray: Array of (y, x) coordinates of candidate sites.
+        """
         grid = self.cluster_grid
 
         east = np.roll(grid, shift=-1, axis=1)
@@ -87,6 +134,9 @@ class DLA2D:
         return np.argwhere(candidates)
     
     def choose_growth_candidate(self):
+        """
+        Chooses a growth site based on the local nutrient concentration and updates the cluster.
+        """
         candidate_indices = self.get_growth_candidates()
         nutrient_values = (
             self.nutrient_grid[candidate_indices[:, 0], candidate_indices[:, 1]]
@@ -104,6 +154,12 @@ class DLA2D:
 
 
     def plot_state(self, step):
+        """
+        Plots the current state of the simulation.
+        
+        Parameters:
+            step (int): Current step number for labeling the plot.
+        """
         plt.figure(figsize=(8, 6))
 
         # Plot nutrient grid
@@ -124,6 +180,16 @@ class DLA2D:
         plt.show()
 
     def growth(self, growth_steps, plot_interval, omega=1.5, tol=1e-5, max_iter=10000):
+        """
+        Runs the DLA growth process for a given number of steps.
+        
+        Parameters:
+            growth_steps (int): Number of steps to simulate.
+            plot_interval (int): Interval at which to plot the grid (-1 for no plots).
+            omega (float): Relaxation parameter for SOR.
+            tol (float): Convergence tolerance.
+            max_iter (int): Maximum number of iterations.
+        """
         for step in range(growth_steps):
             # Termination occured in the last step, so offset step by 1
             if self.termination:
@@ -146,7 +212,20 @@ class DLA2D:
 
 
 def box_counting(grid):
-    """Compute the fractal dimension using the box-counting method."""
+    """
+    Compute the fractal dimension using the box-counting method.
+
+    The function divides the given binary grid into progressively smaller squares (boxes) and counts 
+    the number of non-empty boxes at each scale.
+
+    Parameters:
+        grid (numpy.ndarray): A 2D binary array representing the cluster, where occupied sites are 1.
+
+    Returns:
+        tuple:
+            - sizes (numpy.ndarray): An array of box sizes used for the analysis.
+            - counts (numpy.ndarray): The corresponding count of non-empty boxes at each scale.
+    """
     sizes = np.array([2**i for i in range(1, int(np.log2(min(grid.shape))))])  # Ensure divisibility
     counts = []
 
@@ -166,7 +245,16 @@ def box_counting(grid):
 
 
 def fit_fractal_dimension(sizes, counts):
-    """Fit a power law to estimate the fractal dimension."""
+    """
+    Fit a power law to estimate the fractal dimension using a linear regression in log-log space.
+
+    Parameters:
+        sizes (numpy.ndarray): Array of box sizes.
+        counts (numpy.ndarray): Corresponding number of non-empty boxes.
+
+    Returns:
+        float: The estimated fractal dimension.
+    """
     log_sizes = np.log(sizes)
     log_counts = np.log(counts)
 
@@ -174,6 +262,19 @@ def fit_fractal_dimension(sizes, counts):
     return -slope  # The fractal dimension D
 
 def compute_fractal_dimensions(eta_values, grid_size=(100, 100), growth_steps=5000):
+    """
+    Compute the fractal dimensions for different eta values in a DLA simulation.
+
+    Parameters:
+        eta_values (list of float): List of eta values to simulate.
+        grid_size (tuple of int, optional): Dimensions of the simulation grid. Default is (100, 100).
+        growth_steps (int, optional): Number of growth steps for the DLA process. Default is 5000.
+
+    Returns:
+        tuple:
+            - eta_values (list of float): The input eta values.
+            - fractal_dimensions (list of float): The computed fractal dimensions for each eta.
+    """
     fractal_dimensions = []
 
     for eta in eta_values:
@@ -192,6 +293,20 @@ def compute_fractal_dimensions(eta_values, grid_size=(100, 100), growth_steps=50
 
 # Define eta values and compute fractal dimensions for more runs
 def stochastic_runs_fd(eta_values, runs, grid_size=(100,100)):
+    """
+    Compute the average and standard deviation of fractal dimensions over multiple DLA runs.
+
+    Parameters:
+        eta_values (list of float): List of eta values to simulate.
+        runs (int): Number of stochastic runs per eta value.
+        grid_size (tuple of int, optional): Dimensions of the simulation grid. Default is (100, 100).
+
+    Returns:
+        tuple:
+            - eta_values (list of float): The input η values.
+            - avg_fractal_dimensions (list of float): The average fractal dimension for each eta.
+            - std_fractal_dimensions (list of float): The standard deviation of the fractal dimension for each eta.
+    """
     avg_fractal_dimensions = []
     std_fractal_dimensions = []
 
@@ -220,6 +335,17 @@ def stochastic_runs_fd(eta_values, runs, grid_size=(100,100)):
     return eta_values, avg_fractal_dimensions, std_fractal_dimensions
 
 def plot_many_dla(grid_size, etas, growth_steps):
+    """
+    Run and visualize multiple DLA simulations for different η values.
+
+    Parameters:
+        grid_size (tuple of int): Dimensions of the simulation grid.
+        etas (list of float): List of eta values for simulation.
+        growth_steps (int): Number of growth steps for each DLA model.
+
+    Displays:
+        A side-by-side plot of the generated DLA clusters for different eta values.
+    """
     # Initialize DLA models for different η values
     dla_models = [DLA2D(grid_size, eta) for eta in etas]
 
@@ -258,10 +384,21 @@ def plot_many_dla(grid_size, etas, growth_steps):
 
 
 def growth_iterations(grid_shape, eta, omega, growth_steps=50, tol=1e-5, max_iter=10000):
-    """
+   """
     Runs a DLA simulation for a given number of growth steps with specified omega and eta.
-    Records the SOR iteration count for each nutrient update.
-    Returns the average iteration count and the list of iteration counts.
+
+    Parameters:
+        grid_shape (tuple of int): Dimensions of the simulation grid.
+        eta (float): Growth parameter affecting adhesion probability.
+        omega (float): Relaxation factor for the Successive Over-Relaxation (SOR) method.
+        growth_steps (int, optional): Number of steps for the growth process. Default is 50.
+        tol (float, optional): Tolerance for convergence in the SOR method. Default is 1e-5.
+        max_iter (int, optional): Maximum number of iterations for the SOR method. Default is 10000.
+
+    Returns:
+        tuple:
+            - avg_iter (float): The average number of iterations per step.
+            - iter_counts (list of int): The list of iteration counts per step.
     """
     simulation = DLA2D(grid_shape, eta)
     iter_counts = []
@@ -280,6 +417,14 @@ def optimal_omega_eta(grid_shape, eta_values, omega_values, growth_steps=50, tol
     """
     For a given grid shape, loops over a range of eta and omega values,
     running the full growth simulation and recording the average SOR iterations.
+
+    Parameters:
+        grid_shape (tuple of int): The dimensions of the simulation grid.
+        eta_values (list of float): A list of η values to test.
+        omega_values (list of float): A list of ω values to test.
+        growth_steps (int, optional): The number of growth steps for each simulation. Default is 50.
+        tol (float, optional): Convergence tolerance for the SOR method. Default is 1e-5.
+        max_iter (int, optional): Maximum number of iterations allowed for the SOR method. Default is 10000.
     
     Returns:
         avg_iters: 2D numpy array of shape (len(eta_values), len(omega_values)) with average iterations.
