@@ -6,6 +6,31 @@ from scipy.optimize import curve_fit
 
 @numba.jit(nopython=True, parallel=True)
 def solve_laplace(grid, sinks, omega=1.7, tol=1e-5, max_iter=10000):
+    """
+    Solve the Laplace equation using Red-Black Successive Over-Relaxation (SOR).
+    
+    This function solves the steady-state diffusion equation (Laplace equation)
+    using an optimized Red-Black SOR method with periodic boundary conditions
+    in the horizontal direction.
+    
+    Parameters:
+    -----------
+    grid : numpy.ndarray
+        Initial concentration grid to be solved
+    sinks : numpy.ndarray
+        Boolean mask indicating sink locations (True where sinks are present)
+    omega : float, optional
+        Relaxation parameter (default: 1.7)
+    tol : float, optional
+        Convergence tolerance (default: 1e-5)
+    max_iter : int, optional
+        Maximum number of iterations (default: 10000)
+        
+    Returns:
+    --------
+    tuple
+        (grid, iterations) - The solved grid and number of iterations performed
+    """
     ny, nx = grid.shape
     residual = tol + 1  # Ensure at least one iteration runs
 
@@ -47,7 +72,25 @@ def solve_laplace(grid, sinks, omega=1.7, tol=1e-5, max_iter=10000):
 
 
 class DLA2D:
+    """
+    Diffusion Limited Aggregation (DLA) simulation in 2D with nutrient field.
+    
+    This class implements a DLA model where growth is influenced by a nutrient
+    concentration field that is solved using the Laplace equation. The growth
+    probability is proportional to the nutrient concentration raised to the
+    power of eta.
+    """
     def __init__(self, grid: tuple, eta: float):
+        """
+        Initialize a new DLA2D simulation.
+        
+        Parameters:
+        -----------
+        grid : tuple
+            Tuple of (height, width) specifying the grid dimensions
+        eta : float
+            Exponent controlling the influence of nutrient concentration on growth probability
+        """
         self.nutrient_grid = np.zeros(shape=grid)
         self.cluster_grid = np.zeros_like(self.nutrient_grid)
         self.nutrient_grid[-1, :] = 1.0
@@ -62,11 +105,39 @@ class DLA2D:
         self.termination_step = -1
         
     def update_nutrient_grid(self, omega=1.5, tol=1e-5, max_iter=10000):
+        """
+        Update the nutrient concentration field by solving the Laplace equation.
+        
+        Parameters:
+        -----------
+        omega : float, optional
+            Relaxation parameter for SOR method (default: 1.5)
+        tol : float, optional
+            Convergence tolerance (default: 1e-5)
+        max_iter : int, optional
+            Maximum number of iterations (default: 10000)
+            
+        Returns:
+        --------
+        int
+            Number of iterations performed to reach convergence
+        """
         sinks = self.cluster_grid == 1  
         self.nutrient_grid, iter_count = solve_laplace(self.nutrient_grid, sinks, omega=omega, tol=tol, max_iter=max_iter)
         return iter_count
 
     def get_growth_candidates(self):
+        """
+        Find all valid growth candidate cells adjacent to the existing cluster.
+        
+        A cell is a valid growth candidate if it is empty and has at least one
+        neighboring cell that is part of the cluster.
+        
+        Returns:
+        --------
+        numpy.ndarray
+            Array of [row, col] indices for all valid growth candidate cells
+        """
         grid = self.cluster_grid
 
         east = np.roll(grid, shift=-1, axis=1)
@@ -87,6 +158,17 @@ class DLA2D:
         return np.argwhere(candidates)
     
     def choose_growth_candidate(self):
+        """
+        Select and add a new cell to the cluster based on nutrient concentration.
+        
+        This method:
+        1. Gets all valid growth candidate cells
+        2. Calculates growth probabilities based on nutrient concentration raised to eta power
+        3. Randomly selects a cell based on these probabilities
+        4. Adds the selected cell to the cluster
+        5. Sets the nutrient concentration at that cell to zero (creating a sink)
+        6. Checks if the cluster has reached the bottom boundary for termination
+        """
         candidate_indices = self.get_growth_candidates()
         nutrient_values = (
             self.nutrient_grid[candidate_indices[:, 0], candidate_indices[:, 1]]
@@ -104,6 +186,17 @@ class DLA2D:
 
 
     def plot_state(self, step):
+        """
+        Visualize the current state of the DLA simulation.
+        
+        This method creates a figure showing the nutrient concentration field
+        with the cluster overlaid in white.
+        
+        Parameters:
+        -----------
+        step : int
+            Current simulation step (used for the title)
+        """
         plt.figure(figsize=(8, 6))
 
         # Plot nutrient grid
@@ -124,6 +217,26 @@ class DLA2D:
         plt.show()
 
     def growth(self, growth_steps, plot_interval, omega=1.5, tol=1e-5, max_iter=10000):
+        """
+        Run the DLA growth process for a specified number of steps.
+        
+        This method iteratively updates the nutrient field and adds new cells to the
+        cluster until either the specified number of growth steps is reached or
+        the cluster reaches the bottom boundary (termination condition).
+        
+        Parameters:
+        -----------
+        growth_steps : int
+            Maximum number of growth steps to perform
+        plot_interval : int
+            Interval for plotting the simulation state. If <= 0, no intermediate plots are shown.
+        omega : float, optional
+            Relaxation parameter for SOR method (default: 1.5)
+        tol : float, optional
+            Convergence tolerance (default: 1e-5)
+        max_iter : int, optional
+            Maximum number of iterations for solving Laplace equation (default: 10000)
+        """
         for step in range(growth_steps):
             # Termination occured in the last step, so offset step by 1
             if self.termination:
@@ -174,6 +287,26 @@ def fit_fractal_dimension(sizes, counts):
     return -slope  # The fractal dimension D
 
 def compute_fractal_dimensions(eta_values, grid_size=(100, 100), growth_steps=5000):
+    """
+    Compute fractal dimensions for DLA clusters with different eta values.
+    
+    This function runs a DLA simulation for each eta value and computes
+    the fractal dimension of the resulting cluster.
+    
+    Parameters:
+    -----------
+    eta_values : list or array
+        List of eta values to test
+    grid_size : tuple, optional
+        Size of the grid as (height, width) (default: (100, 100))
+    growth_steps : int, optional
+        Maximum number of growth steps for each simulation (default: 5000)
+        
+    Returns:
+    --------
+    tuple
+        (eta_values, fractal_dimensions) - The input eta values and corresponding fractal dimensions
+    """
     fractal_dimensions = []
 
     for eta in eta_values:
@@ -190,8 +323,29 @@ def compute_fractal_dimensions(eta_values, grid_size=(100, 100), growth_steps=50
     return eta_values, fractal_dimensions
 
 
-# Define eta values and compute fractal dimensions for more runs
 def stochastic_runs_fd(eta_values, runs, grid_size=(100,100)):
+    """
+    Perform multiple DLA simulations for each eta value to compute statistical properties.
+    
+    This function runs multiple DLA simulations for each eta value to calculate
+    the mean and standard deviation of the fractal dimension, providing insight
+    into the stochastic variability of the growth process.
+    
+    Parameters:
+    -----------
+    eta_values : list or array
+        List of eta values to test
+    runs : int
+        Number of simulation runs for each eta value
+    grid_size : tuple, optional
+        Size of the grid as (height, width) (default: (100, 100))
+        
+    Returns:
+    --------
+    tuple
+        (eta_values, avg_fractal_dimensions, std_fractal_dimensions) -
+        The input eta values, mean fractal dimensions, and standard deviations
+    """
     avg_fractal_dimensions = []
     std_fractal_dimensions = []
 
@@ -220,6 +374,22 @@ def stochastic_runs_fd(eta_values, runs, grid_size=(100,100)):
     return eta_values, avg_fractal_dimensions, std_fractal_dimensions
 
 def plot_many_dla(grid_size, etas, growth_steps):
+    """
+    Run and visualize multiple DLA simulations with different eta values.
+    
+    This function creates a side-by-side comparison of DLA clusters grown
+    with different eta values, showing both the nutrient field and the
+    cluster structure.
+    
+    Parameters:
+    -----------
+    grid_size : tuple
+        Size of the grid as (height, width)
+    etas : list or array
+        List of eta values to simulate and compare
+    growth_steps : int
+        Maximum number of growth steps for each simulation
+    """
     # Initialize DLA models for different η values
     dla_models = [DLA2D(grid_size, eta) for eta in etas]
 
