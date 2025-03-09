@@ -125,6 +125,8 @@ def update_walker_position(walker, grid, grid_size, s_prob):
         if new_x >= grid_size or new_x < 0:
             grid[x, y] = 0
             new_pos, grid = spawn_walker(grid, grid_size)
+            if new_pos is None:
+                return None, grid, False
             return new_pos, grid, False
         
         # Try to move if the new position is empty
