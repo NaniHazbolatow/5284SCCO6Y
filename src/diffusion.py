@@ -384,7 +384,7 @@ def plot_many_dla(grid_size, etas, growth_steps):
 
 
 def growth_iterations(grid_shape, eta, omega, growth_steps=50, tol=1e-5, max_iter=10000):
-   """
+    """
     Runs a DLA simulation for a given number of growth steps with specified omega and eta.
 
     Parameters:
