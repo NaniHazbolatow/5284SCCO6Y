@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 
 def box_counting(grid):
     """Compute the fractal dimension using the box-counting method."""
