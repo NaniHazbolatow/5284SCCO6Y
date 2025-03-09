@@ -216,7 +216,7 @@ def run_single_mc_dla(grid_size, max_growth_steps, iterations=1000, s_prob=0.5, 
         plt.show()
 
     else:
-        while growth_steps < max_growth_steps or reached_top:
+        while growth_steps < max_growth_steps and not reached_top:
             # spawn a walker every iteration
             spawn_position, grid = spawn_walker(grid, grid_size)
             if spawn_position is not None:
@@ -269,7 +269,7 @@ def compute_fractal_dimensions_mc_dla(grid):
 
 
 if __name__ == "__main__":
-    grid_size = 100
+    grid_size = 20
     iterations = 50000
     max_growth_steps = 1000
     probs = np.linspace(0.1, 1, 10)
@@ -281,7 +281,7 @@ if __name__ == "__main__":
     for i, sticking_prob in enumerate(probs):
         print(f'Running for sticking probability: {sticking_prob}')
         plt.subplot(1, len(probs), i + 1) 
-        for _ in range(25):
+        for _ in range(1):
             steps, grid = run_single_mc_dla(grid_size, max_growth_steps, iterations, sticking_prob, show_animation=False, show_walkers=False, show_final=False)
             # Append the fractal dimension to the list for this probability
             fractal_dims[sticking_prob].append(compute_fractal_dimensions_mc_dla(grid))
