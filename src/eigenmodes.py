@@ -163,20 +163,47 @@ def spectrum_vs_L(Ls, h, shape):
             M = construct_M_circle(N, h, L)
 
         lamda, _ = linalg.eigs(M, k=4, which='SM')
+        
         idx = np.flip(np.argsort(np.real(lamda)))
         lamda = lamda[idx]
 
         freqs = np.sqrt(np.abs(np.real(lamda)))
         eigenfreqs.append(freqs)
-        
+    
+    return eigenfreqs
+
+
+def plot_spectrum_vs_L(Ls, eigenfreqs_sq, eigenfreqs_rec, eigenfreqs_cir):
+
     colors = ['red', 'blue', 'green', 'black']
-    plt.figure(figsize=(7, 5), dpi=300)
-    plt.title('Eigenfrequencies vs. System Size', fontsize=17)
+    plt.figure(figsize=(18, 5), dpi=300)
+    plt.suptitle('Eigenfrequencies vs. System Size', fontsize=19)
+
+    plt.subplot(1, 3, 1)
+    plt.title('Square Membrane', fontsize=17)
     for mode in range(4):
-        plt.plot(Ls, [freq[mode] for freq in eigenfreqs], marker='o', label=f'Mode {mode+1}', color=colors[mode])
+        plt.plot(Ls, [freq[mode] for freq in eigenfreqs_sq], marker='o', label=f'Mode {mode+1}', color=colors[mode])
     plt.xlabel(r'System Size $L$', fontsize=15)
     plt.ylabel('Eigenfrequency', fontsize=15)
+    plt.tick_params(axis='both', labelsize=13)
     plt.legend()
+
+    plt.subplot(1, 3, 2)
+    plt.title('Rectangular Membrane', fontsize=17)
+    for mode in range(4):
+        plt.plot(Ls, [freq[mode] for freq in eigenfreqs_rec], marker='o', label=f'Mode {mode+1}', color=colors[mode])
+    plt.xlabel(r'System Size $L$', fontsize=15)
+    plt.tick_params(axis='both', labelsize=13)
+    plt.legend()
+
+    plt.subplot(1, 3, 3)
+    plt.title('Circular Membrane', fontsize=17)
+    for mode in range(4):
+        plt.plot(Ls, [freq[mode] for freq in eigenfreqs_cir], marker='o', label=f'Mode {mode+1}', color=colors[mode])
+    plt.xlabel(r'System Size $L$', fontsize=15)
+    plt.tick_params(axis='both', labelsize=13)
+    plt.legend()
+
     plt.show()
 
 
@@ -197,15 +224,40 @@ def spectrum_vs_num_steps(Ns, L, shape='square'):
         lamda = lamda[idx]
         freqs = np.sqrt(np.abs(np.real(lamda)))
         freqs_vs_N.append(freqs)
+    
+    return freqs_vs_N
+
+def plot_spectrum_vs_num_steps(Ns, freq_sq, freq_rec, freq_cir):
 
     colors = ['red', 'blue', 'green', 'black']
-    plt.figure(figsize=(7,5), dpi=300)
-    plt.title('Eigenfrequencies vs. Number of Steps', fontsize=17)
+    plt.figure(figsize=(18, 5), dpi=300)
+    plt.suptitle('Eigenfrequencies vs. Number of Discretization Steps', fontsize=19)
+
+    plt.subplot(1, 3, 1)
+    plt.title('Square Membrane', fontsize=17)
     for mode in range(4):
-        plt.plot(Ns, [freq[mode] for freq in freqs_vs_N], marker='o', label=f'Mode {mode+1}', color=colors[mode])
+        plt.plot(Ns, [freq[mode] for freq in freq_sq], marker='o', label=f'Mode {mode+1}', color=colors[mode])
     plt.xlabel('Number of Steps', fontsize=15)
     plt.ylabel('Eigenfrequency', fontsize=15)
+    plt.tick_params(axis='both', labelsize=13)
     plt.legend()
+
+    plt.subplot(1, 3, 2)
+    plt.title('Rectangular Membrane', fontsize=17)
+    for mode in range(4):
+        plt.plot(Ns, [freq[mode] for freq in freq_rec], marker='o', label=f'Mode {mode+1}', color=colors[mode])
+    plt.xlabel(r'Number of Steps', fontsize=15)
+    plt.tick_params(axis='both', labelsize=13)
+    plt.legend()
+
+    plt.subplot(1, 3, 3)
+    plt.title('Circular Membrane', fontsize=17)
+    for mode in range(4):
+        plt.plot(Ns, [freq[mode] for freq in freq_cir], marker='o', label=f'Mode {mode+1}', color=colors[mode])
+    plt.xlabel(r'Number of Steps', fontsize=15)
+    plt.tick_params(axis='both', labelsize=13)
+    plt.legend()
+
     plt.show()
 
 
@@ -232,8 +284,7 @@ def time_dependent_modes(time, c, lamda, v, N, mode_number=1, A=1, B=0):
         return [im]
 
     ani = animation.FuncAnimation(fig, update, frames=len(time), interval=50, blit=True)
-    plt.show()
-    # plt.close(fig)
+    plt.close(fig)
     return ani
 
 
