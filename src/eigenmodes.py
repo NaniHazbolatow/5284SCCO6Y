@@ -76,7 +76,7 @@ def construct_M_circle(N, h, L):
     return M
 
 
-def plot_eigenvectors(lamda, v, grid_shape, L, freqs_of_interest=[0, 1, 2, 3], shape='square'):
+def plot_eigenvectors(lamda, v, grid_shape, L, plot_title, freqs_of_interest=[0, 1, 2, 3], shape='square'):
 
     idx = np.flip(np.argsort(np.real(lamda)))
     lamda = lamda[idx]
@@ -85,17 +85,27 @@ def plot_eigenvectors(lamda, v, grid_shape, L, freqs_of_interest=[0, 1, 2, 3], s
     freqs = np.sqrt(np.abs(np.real(lamda)))
 
     plt.figure(figsize=(5*len(freqs_of_interest), 5), dpi=300)
+    plt.suptitle(f'{plot_title}', fontsize=20)
     for i, index in enumerate(freqs_of_interest):
         plt.subplot(1, len(freqs_of_interest), i + 1)
+        if i == 0:
+            plt.ylabel('y', fontsize=17)
         if shape == 'rectangle':
             Ny, Nx = grid_shape
             plt.imshow(np.real(v[:, index]).reshape(Ny,Nx), extent=[0,L,0,2*L], cmap='inferno')
+            plt.yticks([0, 1, 2])
         else:
             N, _ = grid_shape
             plt.imshow(np.real(v[:, index]).reshape(N,N), extent=[0,L,0,L], cmap='inferno')
-        plt.title(f'Frequency = {round(freqs[index], 2)}')
-        plt.colorbar()
-    
+            plt.yticks([0, 1])
+        plt.title(f'Frequency = {round(freqs[index], 2)}', fontsize=17)
+        plt.xlabel('x', fontsize=17)
+        plt.xticks([0, 1])
+        plt.tick_params('both', labelsize=13)
+        cbar = plt.colorbar()
+        cbar.ax.tick_params(labelsize=13)
+        cbar.set_label('Amplitude', fontsize=16)
+
     plt.tight_layout()
     plt.show()
 
@@ -128,16 +138,18 @@ def performance_compare(Ns, num_runs, plot=False):
     if plot:
         plt.figure(figsize=(7, 5), dpi=300)
         plt.title('Performance Comparison of eig() and eigs()', fontsize=17)
-        plt.scatter(Ns, mean_eig, color='blue', label='eig() times')
-        plt.fill_between(Ns, mean_eig - CI_eig, mean_eig + CI_eig, color='blue', alpha=0.5)
+        plt.scatter(Ns, mean_eig, color='black', label='eig() times')
+        plt.fill_between(Ns, mean_eig - CI_eig, mean_eig + CI_eig, color='black', alpha=0.5)
 
         plt.scatter(Ns, mean_eigs, color='red', label='eigs() times')
         plt.fill_between(Ns, mean_eigs - CI_eigs, mean_eigs + CI_eigs, color='red', alpha=0.5)       
 
-        plt.xlabel(r'System Size $N$', fontsize=15)
+        plt.xlabel('System Size', fontsize=15)
         plt.ylabel(r'Execution Time [ms]', fontsize=15)
+        plt.tick_params('both', labelsize=12)
         plt.legend()
 
+        plt.tight_layout()
         plt.show()  
 
     return mean_eig, CI_eig, mean_eigs, CI_eigs
@@ -175,7 +187,7 @@ def spectrum_vs_L(Ls, h, shape):
 
 def plot_spectrum_vs_L(Ls, eigenfreqs_sq, eigenfreqs_rec, eigenfreqs_cir):
 
-    colors = ['red', 'blue', 'green', 'black']
+    colors = ['gold', 'orange', 'red', 'black']
     plt.figure(figsize=(18, 5), dpi=300)
     plt.suptitle('Eigenfrequencies vs. System Size', fontsize=19)
 
@@ -183,7 +195,7 @@ def plot_spectrum_vs_L(Ls, eigenfreqs_sq, eigenfreqs_rec, eigenfreqs_cir):
     plt.title('Square Membrane', fontsize=17)
     for mode in range(4):
         plt.plot(Ls, [freq[mode] for freq in eigenfreqs_sq], marker='o', label=f'Mode {mode+1}', color=colors[mode])
-    plt.xlabel(r'System Size $L$', fontsize=15)
+    plt.xlabel(r'System Size', fontsize=15)
     plt.ylabel('Eigenfrequency', fontsize=15)
     plt.tick_params(axis='both', labelsize=13)
     plt.legend()
@@ -192,7 +204,7 @@ def plot_spectrum_vs_L(Ls, eigenfreqs_sq, eigenfreqs_rec, eigenfreqs_cir):
     plt.title('Rectangular Membrane', fontsize=17)
     for mode in range(4):
         plt.plot(Ls, [freq[mode] for freq in eigenfreqs_rec], marker='o', label=f'Mode {mode+1}', color=colors[mode])
-    plt.xlabel(r'System Size $L$', fontsize=15)
+    plt.xlabel(r'System Size', fontsize=15)
     plt.tick_params(axis='both', labelsize=13)
     plt.legend()
 
@@ -200,7 +212,7 @@ def plot_spectrum_vs_L(Ls, eigenfreqs_sq, eigenfreqs_rec, eigenfreqs_cir):
     plt.title('Circular Membrane', fontsize=17)
     for mode in range(4):
         plt.plot(Ls, [freq[mode] for freq in eigenfreqs_cir], marker='o', label=f'Mode {mode+1}', color=colors[mode])
-    plt.xlabel(r'System Size $L$', fontsize=15)
+    plt.xlabel(r'System Size', fontsize=15)
     plt.tick_params(axis='both', labelsize=13)
     plt.legend()
 
@@ -227,9 +239,10 @@ def spectrum_vs_num_steps(Ns, L, shape='square'):
     
     return freqs_vs_N
 
+
 def plot_spectrum_vs_num_steps(Ns, freq_sq, freq_rec, freq_cir):
 
-    colors = ['red', 'blue', 'green', 'black']
+    colors = ['gold', 'orange', 'red', 'black']
     plt.figure(figsize=(18, 5), dpi=300)
     plt.suptitle('Eigenfrequencies vs. Number of Discretization Steps', fontsize=19)
 
@@ -308,7 +321,7 @@ def draw_system_and_matrix(N, h, print_latex_matrix=False, plot_system=True):
         plt.ylabel('y', fontsize=17)
         plt.grid(linestyle='--', linewidth=0.5)
         plt.gca().set_aspect('equal', adjustable='box')
-        plt.title("4x4 Square System", fontsize=17)
+        plt.title("4x4 Square Membrane", fontsize=17)
         plt.show()
 
 
