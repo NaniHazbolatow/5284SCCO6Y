@@ -1,14 +1,22 @@
 import numpy as np
-from scipy.linalg import eig
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+from scipy.linalg import eig
 from scipy.sparse import diags, kron, identity, linalg, lil_matrix
-import time
 from sympy import Matrix, latex
+import time
 
 
 def construct_M_square(N, h):
+    """Constructs the matrix for the eigenvalue problem for a square membrane.
 
+    Args:
+        N (int): number of discretization steps
+        h (float): spatial increment
+
+    Returns:
+        2D array: Matrix that encodes the 5-point stencil for the discrete laplacian.
+    """    
     main_diag = -2 * np.ones(N)
     off_diag = np.ones(N-1)
     sparse_mat = diags([main_diag, off_diag, off_diag], [0, -1, 1]) / h**2
@@ -20,7 +28,17 @@ def construct_M_square(N, h):
     
 
 def construct_M_rec(Nx, Ny, hx, hy):
+    """Constructs the matrix for the eigenvalue problem for a rectangular membrane.
 
+    Args:
+        Nx (int): Number of discretization steps in the x direction
+        Ny (int): Number of discretization steps in the y direction
+        hx (float): spatial increment in the x direction
+        hy (float): spatial increment in the y direction
+
+    Returns:
+        2D array: Matrix that encodes the 5-point stencil for the discrete laplacian.
+    """    
     main_diag_x = -2 * np.ones(Nx)
     off_diag_x = np.ones(Nx-1)
     sparse_mat_x = diags([main_diag_x, off_diag_x, off_diag_x], [0, -1, 1]) / hx**2
@@ -37,7 +55,19 @@ def construct_M_rec(Nx, Ny, hx, hy):
     
 
 def construct_M_circle(N, h, L):
+    """Constructs the matrix for the eigenvalue problem for a rectangular matrix.
+       The Dirichlet boundary conditions are implemented by first creating a boolean matrix 
+       that determines if a point is within the domain. Depending on the location of a grid
+       point, a value is placed in.
+    
+    Args:
+        N (int): Number of discretization steps
+        h (float): spatial increment
+        L (float): system size
 
+    Returns:
+        2D array: Matrix that encodes the 5-point stencil for the discrete laplacian.
+    """    
     N = int(N)
     inside_circle = np.zeros((N,N), dtype=bool)
     centre = L / 2
@@ -77,7 +107,17 @@ def construct_M_circle(N, h, L):
 
 
 def plot_eigenvectors(lamda, v, grid_shape, L, plot_title, freqs_of_interest=[0, 1, 2, 3], shape='square'):
+    """Sorts the eigenvalues/vectors from smallest to largest magnitude and plots the corresponding eigenmodes.
 
+    Args:
+        lamda (array): array of eigenvalues
+        v (array): array of eigenvectors
+        grid_shape (tuple): general shape of the grid. LxL for square and circle and Lx2L for rectangle.
+        L (float): system size
+        plot_title (str): title of the subplot, depends on the shape of the membrane
+        freqs_of_interest (list, optional): list of modes that are plotted. Defaults to [0, 1, 2, 3].
+        shape (str, optional): shape of the membrane. Defaults to 'square'.
+    """    
     idx = np.flip(np.argsort(np.real(lamda)))
     lamda = lamda[idx]
     v = v[:, idx]
@@ -111,7 +151,16 @@ def plot_eigenvectors(lamda, v, grid_shape, L, plot_title, freqs_of_interest=[0,
 
 
 def performance_compare(Ns, num_runs, plot=False):
+    """Compares the performance between eigs() and eig() by measuring execution time over multiple runs for multiple system sizes.
 
+    Args:
+        Ns (array): array of different matrix sizes
+        num_runs (int): number of runs per matrix size
+        plot (bool, optional): option to plot results. Defaults to False.
+
+    Returns:
+        array: arrays containing the average and confidence intervals of the results.
+    """    
     times_eig = np.zeros((num_runs, len(Ns)))
     times_eigs = np.zeros((num_runs, len(Ns)))
 
@@ -156,7 +205,16 @@ def performance_compare(Ns, num_runs, plot=False):
 
 
 def spectrum_vs_L(Ls, h, shape):
+    """Calculates the eigenfrequencies as a function of system size for a given shape.
 
+    Args:
+        Ls (array): array of different system sizes
+        h (float): spatial increment
+        shape (str): shape of the membrane
+
+    Returns:
+        array: array of eigenfrequencies for the first 4 modes for different system sizes
+    """    
     eigenfreqs = []
     for i, L in enumerate(Ls):
         if shape == 'rectangle':
@@ -173,6 +231,8 @@ def spectrum_vs_L(Ls, h, shape):
         elif shape == 'circle':
             N = int(L/h) - 1
             M = construct_M_circle(N, h, L)
+        else:
+            raise ValueError('Choose a valid shape: square, rectangle, or circle.')
 
         lamda, _ = linalg.eigs(M, k=4, which='SM')
         
@@ -186,7 +246,14 @@ def spectrum_vs_L(Ls, h, shape):
 
 
 def plot_spectrum_vs_L(Ls, eigenfreqs_sq, eigenfreqs_rec, eigenfreqs_cir):
+    """Plots the results for the function spectrum_vs_L.
 
+    Args:
+        Ls (array): array of different system sizes
+        eigenfreqs_sq (array): eigenfrequencies for different system sizes for a square membrane
+        eigenfreqs_rec (array): eigenfrequencies for different system sizes for a rectangular membrane
+        eigenfreqs_cir (array): eigenfrequencies for different system sizes for a circular membrane
+    """    
     colors = ['gold', 'orange', 'red', 'black']
     plt.figure(figsize=(18, 5), dpi=300)
     plt.suptitle('Eigenfrequencies vs. System Size', fontsize=19)
@@ -216,11 +283,21 @@ def plot_spectrum_vs_L(Ls, eigenfreqs_sq, eigenfreqs_rec, eigenfreqs_cir):
     plt.tick_params(axis='both', labelsize=13)
     plt.legend()
 
+    plt.tight_layout()
     plt.show()
 
 
 def spectrum_vs_num_steps(Ns, L, shape='square'):
+    """Calculates the eigenfrequency spectrum for different numbers of discretization steps.
 
+    Args:
+        Ns (array): array with different numbers of discretization steps
+        L (float): system size
+        shape (str, optional): shape of the membrane. Defaults to 'square'.
+
+    Returns:
+        array: array of eigenfrequencies for the first 4 modes for different numbers of discretization steps
+    """    
     freqs_vs_N = []
     for N in Ns:
         h = L/(int(N)+1)
@@ -241,7 +318,14 @@ def spectrum_vs_num_steps(Ns, L, shape='square'):
 
 
 def plot_spectrum_vs_num_steps(Ns, freq_sq, freq_rec, freq_cir):
+    """Plots the eigenfrequencies of the function spectrum_vs_num_steps.
 
+    Args:
+        Ns (array): array of different numbers of discretization steps
+        eigenfreqs_sq (array): eigenfrequencies for different N for a square membrane
+        eigenfreqs_rec (array): eigenfrequencies for different N for a rectangular membrane
+        eigenfreqs_cir (array): eigenfrequencies for different N for a circular membrane
+    """    
     colors = ['gold', 'orange', 'red', 'black']
     plt.figure(figsize=(18, 5), dpi=300)
     plt.suptitle('Eigenfrequencies vs. Number of Discretization Steps', fontsize=19)
@@ -271,11 +355,26 @@ def plot_spectrum_vs_num_steps(Ns, freq_sq, freq_rec, freq_cir):
     plt.tick_params(axis='both', labelsize=13)
     plt.legend()
 
+    plt.tight_layout()
     plt.show()
 
 
 def time_dependent_modes(time, c, lamda, v, N, mode_number=1, A=1, B=0):
-    
+    """Uses temporal component to make a time dependent animation of the eigenmodes.
+
+    Args:
+        time (array): array of time steps
+        c (float): wave speed
+        lamda (array): array of eigenfrequencies
+        v (array): array of eigenmodes
+        N (int): number of discretization steps
+        mode_number (int, optional): mode to be animated. Defaults to 1, which is the first mode
+        A (int, optional): multiplicative factor for the cosine. Defaults to 1.
+        B (int, optional): multiplicative factor for the sine. Defaults to 0.
+
+    Returns:
+        matplotlib animation
+    """    
     eigenmode_evo = []
     eigenmode = np.real(v[:, mode_number-1]).reshape(N,N)
     for t in time:
@@ -302,26 +401,35 @@ def time_dependent_modes(time, c, lamda, v, N, mode_number=1, A=1, B=0):
 
 
 def draw_system_and_matrix(N, h, print_latex_matrix=False, plot_system=True):
+    """Draw an example system and print out the latex code for it.
+
+    Args:
+        N (int): number of steps
+        h (float): spatial increment
+        print_latex_matrix (bool, optional): print latex code for matrix. Defaults to False.
+        plot_system (bool, optional): plot example system. Defaults to True.
+    """    
     M = construct_M_square(N, h)
     M_sympy = Matrix(M.toarray())
     if print_latex_matrix:
         print(latex(M_sympy))
 
     if plot_system:
-        x = np.arange(4)
-        y = np.arange(4)
+        x = np.arange(N)
+        y = np.arange(N)
         X, Y = np.meshgrid(x, y)
 
         plt.figure(figsize=(5, 5), dpi=300)
         plt.scatter(X, Y, color='black', s=50, zorder=10)
         plt.xticks(x)
         plt.yticks(y)
-        plt.ylim(3.15, -0.15)
+        plt.ylim(2.15, -0.15)
         plt.xlabel('x', fontsize=17)
         plt.ylabel('y', fontsize=17)
         plt.grid(linestyle='--', linewidth=0.5)
         plt.gca().set_aspect('equal', adjustable='box')
-        plt.title("4x4 Square Membrane", fontsize=17)
+        plt.title(f"{N}x{N} Square Membrane", fontsize=19)
+        plt.tight_layout()
         plt.show()
 
 
