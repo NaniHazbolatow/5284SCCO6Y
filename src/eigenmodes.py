@@ -150,12 +150,23 @@ def plot_eigenvectors(lamda, v, grid_shape, L, plot_title, freqs_of_interest=[0,
     plt.show()
 
 def compute_execution_time(func, M, k=None):
+    """Computes the execution time for calculating the eigenvalues/vectors for eig() and eigs()
+
+    Args:
+        func (function): solver: eig() or eigs()
+        M (array): matrix of which eigenvalues/vectors are calculated
+        k (int, optional): number of eigenvalues/vectors for eigs(). Defaults to None.
+
+    Returns:
+        float: execution time in nanoseconds
+    """    
     start_eig = time.time_ns()
     if func == eig:
         lamda, v = func(M.toarray())
     else:
         lamda, v = func(M.toarray(), k)
     stop_eig = time.time_ns()
+
     return (stop_eig - start_eig)/1e6
 
 def performance_compare(Ns, num_runs, plot=False):
