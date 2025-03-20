@@ -42,7 +42,7 @@ def leapfrog_harmonic_oscillator(m, k, x0, v0, dt, T, driving_force=None):
     return x, v, energy, t
 
 def plot_harmonic_oscillator(Ks, Xs, Vs, t):
-    fig, axs = plt.subplots(2, 1, figsize=(12, 5))
+    fig, axs = plt.subplots(2, 1, figsize=(16, 4))
     for i in range(len(Xs)):
         axs[0].plot(t, Xs[i], label=f'K={Ks[i]}')
         axs[1].plot(t, Vs[i], label=f'K={Ks[i]}')
@@ -114,7 +114,7 @@ def compare_energy_conservation(m, k, x0, v0, dt, T):
     rk45_t = rk45_t[window//2:len(rk45_energy) + window//2]
     
     # Plot results
-    plt.figure(figsize=(12, 5))
+    plt.figure(figsize=(16, 4))
     
     # Energy plot
     plt.plot(leap_t, leap_energy, label='Leapfrog')
@@ -136,7 +136,7 @@ def driven_oscillator_analysis(m, k, x0, v0, dt, T, driving_amplitudes, frequenc
     natural_freq = np.sqrt(k/m)
     
     # Create phase plots for different frequency ratios
-    plt.figure(figsize=(15, 10))
+    plt.figure(figsize=(18, 12))
     
     for i, amp in enumerate(driving_amplitudes):
         for j, ratio in enumerate(frequency_ratios):
