@@ -124,8 +124,8 @@ def plot_eigenvectors(lamda, v, grid_shape, L, plot_title, freqs_of_interest=[0,
 
     freqs = np.sqrt(np.abs(np.real(lamda)))
 
-    plt.figure(figsize=(5*len(freqs_of_interest), 5), dpi=300)
-    plt.suptitle(f'{plot_title}', fontsize=20)
+    plt.figure(figsize=(5*len(freqs_of_interest), 5), dpi=400)
+    plt.suptitle(f'{plot_title}', fontsize=21)
     for i, index in enumerate(freqs_of_interest):
         plt.subplot(1, len(freqs_of_interest), i + 1)
         if i == 0:
@@ -144,11 +144,30 @@ def plot_eigenvectors(lamda, v, grid_shape, L, plot_title, freqs_of_interest=[0,
         plt.tick_params('both', labelsize=13)
         cbar = plt.colorbar()
         cbar.ax.tick_params(labelsize=13)
-        cbar.set_label('Amplitude', fontsize=16)
+        cbar.set_label('Amplitude', fontsize=17)
 
     plt.tight_layout()
     plt.show()
 
+def compute_execution_time(func, M, k=None):
+    """Computes the execution time for calculating the eigenvalues/vectors for eig() and eigs()
+
+    Args:
+        func (function): solver: eig() or eigs()
+        M (array): matrix of which eigenvalues/vectors are calculated
+        k (int, optional): number of eigenvalues/vectors for eigs(). Defaults to None.
+
+    Returns:
+        float: execution time in nanoseconds
+    """    
+    start_eig = time.time_ns()
+    if func == eig:
+        lamda, v = func(M.toarray())
+    else:
+        lamda, v = func(M.toarray(), k)
+    stop_eig = time.time_ns()
+
+    return (stop_eig - start_eig)/1e6
 
 def performance_compare(Ns, num_runs, plot=False):
     """Compares the performance between eigs() and eig() by measuring execution time over multiple runs for multiple system sizes.
@@ -163,40 +182,40 @@ def performance_compare(Ns, num_runs, plot=False):
     """    
     times_eig = np.zeros((num_runs, len(Ns)))
     times_eigs = np.zeros((num_runs, len(Ns)))
+    times_eigs_long = np.zeros((num_runs, len(Ns)))
 
     for i in range(num_runs):
         for j, N in enumerate(Ns):
 
             M = construct_M_square(int(N), 1)
-
-            start_eig = time.time_ns()
-            lamda, v = eig(M.toarray())
-            stop_eig = time.time_ns()
-            times_eig[i, j] = (stop_eig - start_eig)/1e6
-
-            start_eigs = time.time_ns()
-            lamda, v = linalg.eigs(M)
-            stop_eigs = time.time_ns()
-            times_eigs[i, j] = (stop_eigs - start_eigs)/1e6
+            times_eig[i, j] = compute_execution_time(eig, M)
+            times_eigs[i,j] = compute_execution_time(linalg.eigs, M, k=6)
+            times_eigs_long[i,j] = compute_execution_time(linalg.eigs, M, k=len(M.toarray()) - 2)
 
     mean_eig = np.mean(times_eig, axis=0)
     CI_eig = 1.96 * np.std(times_eig, axis=0) / np.sqrt(num_runs)
     mean_eigs = np.mean(times_eigs, axis=0)
     CI_eigs = 1.96 * np.std(times_eigs, axis=0) / np.sqrt(num_runs)
+    mean_eigs_long = np.mean(times_eigs_long, axis=0)
+    CI_eigs_long = 1.96 * np.std(times_eigs_long, axis=0) / np.sqrt(num_runs)
 
     if plot:
-        plt.figure(figsize=(7, 5), dpi=300)
+        plt.figure(figsize=(7, 5), dpi=400)
         plt.title('Performance Comparison of eig() and eigs()', fontsize=17)
         plt.scatter(Ns, mean_eig, color='black', label='eig() times')
         plt.fill_between(Ns, mean_eig - CI_eig, mean_eig + CI_eig, color='black', alpha=0.5)
 
-        plt.scatter(Ns, mean_eigs, color='red', label='eigs() times')
+        plt.scatter(Ns, mean_eigs, color='red', label='eigs(k=6) times')
         plt.fill_between(Ns, mean_eigs - CI_eigs, mean_eigs + CI_eigs, color='red', alpha=0.5)       
+
+        plt.scatter(Ns, mean_eigs_long, color='orange', label='eigs(k=max) times')
+        plt.fill_between(Ns, mean_eigs_long - CI_eigs_long, mean_eigs_long + CI_eigs_long, color='orange', alpha=0.5)  
 
         plt.xlabel('System Size', fontsize=15)
         plt.ylabel(r'Execution Time [ms]', fontsize=15)
         plt.tick_params('both', labelsize=12)
-        plt.legend()
+        plt.legend(fontsize=13)
+        plt.yscale('log')
 
         plt.tight_layout()
         plt.show()  
@@ -255,33 +274,33 @@ def plot_spectrum_vs_L(Ls, eigenfreqs_sq, eigenfreqs_rec, eigenfreqs_cir):
         eigenfreqs_cir (array): eigenfrequencies for different system sizes for a circular membrane
     """    
     colors = ['gold', 'orange', 'red', 'black']
-    plt.figure(figsize=(18, 5), dpi=300)
-    plt.suptitle('Eigenfrequencies vs. System Size', fontsize=19)
+    plt.figure(figsize=(18, 5), dpi=400)
+    plt.suptitle('Eigenfrequencies vs. System Size', fontsize=20)
 
     plt.subplot(1, 3, 1)
-    plt.title('Square Membrane', fontsize=17)
+    plt.title('Square Membrane', fontsize=18)
     for mode in range(4):
         plt.plot(Ls, [freq[mode] for freq in eigenfreqs_sq], marker='o', label=f'Mode {mode+1}', color=colors[mode])
-    plt.xlabel(r'System Size', fontsize=15)
-    plt.ylabel('Eigenfrequency', fontsize=15)
-    plt.tick_params(axis='both', labelsize=13)
-    plt.legend()
+    plt.xlabel(r'System Size', fontsize=16)
+    plt.ylabel('Eigenfrequency', fontsize=16)
+    plt.tick_params(axis='both', labelsize=14)
+    plt.legend(fontsize=12)
 
     plt.subplot(1, 3, 2)
-    plt.title('Rectangular Membrane', fontsize=17)
+    plt.title('Rectangular Membrane', fontsize=18)
     for mode in range(4):
         plt.plot(Ls, [freq[mode] for freq in eigenfreqs_rec], marker='o', label=f'Mode {mode+1}', color=colors[mode])
-    plt.xlabel(r'System Size', fontsize=15)
-    plt.tick_params(axis='both', labelsize=13)
-    plt.legend()
+    plt.xlabel(r'System Size', fontsize=16)
+    plt.tick_params(axis='both', labelsize=14)
+    plt.legend(fontsize=12)
 
     plt.subplot(1, 3, 3)
-    plt.title('Circular Membrane', fontsize=17)
+    plt.title('Circular Membrane', fontsize=18)
     for mode in range(4):
         plt.plot(Ls, [freq[mode] for freq in eigenfreqs_cir], marker='o', label=f'Mode {mode+1}', color=colors[mode])
-    plt.xlabel(r'System Size', fontsize=15)
-    plt.tick_params(axis='both', labelsize=13)
-    plt.legend()
+    plt.xlabel(r'System Size', fontsize=16)
+    plt.tick_params(axis='both', labelsize=14)
+    plt.legend(fontsize=12)
 
     plt.tight_layout()
     plt.show()
@@ -327,33 +346,33 @@ def plot_spectrum_vs_num_steps(Ns, freq_sq, freq_rec, freq_cir):
         eigenfreqs_cir (array): eigenfrequencies for different N for a circular membrane
     """    
     colors = ['gold', 'orange', 'red', 'black']
-    plt.figure(figsize=(18, 5), dpi=300)
-    plt.suptitle('Eigenfrequencies vs. Number of Discretization Steps', fontsize=19)
+    plt.figure(figsize=(18, 5), dpi=400)
+    plt.suptitle('Eigenfrequencies vs. Number of Discretization Steps', fontsize=20)
 
     plt.subplot(1, 3, 1)
-    plt.title('Square Membrane', fontsize=17)
+    plt.title('Square Membrane', fontsize=18)
     for mode in range(4):
         plt.plot(Ns, [freq[mode] for freq in freq_sq], marker='o', label=f'Mode {mode+1}', color=colors[mode])
-    plt.xlabel('Number of Steps', fontsize=15)
-    plt.ylabel('Eigenfrequency', fontsize=15)
-    plt.tick_params(axis='both', labelsize=13)
-    plt.legend()
+    plt.xlabel('Number of Steps', fontsize=16)
+    plt.ylabel('Eigenfrequency', fontsize=16)
+    plt.tick_params(axis='both', labelsize=14)
+    plt.legend(fontsize=12)
 
     plt.subplot(1, 3, 2)
-    plt.title('Rectangular Membrane', fontsize=17)
+    plt.title('Rectangular Membrane', fontsize=18)
     for mode in range(4):
         plt.plot(Ns, [freq[mode] for freq in freq_rec], marker='o', label=f'Mode {mode+1}', color=colors[mode])
-    plt.xlabel(r'Number of Steps', fontsize=15)
-    plt.tick_params(axis='both', labelsize=13)
-    plt.legend()
+    plt.xlabel(r'Number of Steps', fontsize=16)
+    plt.tick_params(axis='both', labelsize=14)
+    plt.legend(fontsize=12)
 
     plt.subplot(1, 3, 3)
-    plt.title('Circular Membrane', fontsize=17)
+    plt.title('Circular Membrane', fontsize=18)
     for mode in range(4):
         plt.plot(Ns, [freq[mode] for freq in freq_cir], marker='o', label=f'Mode {mode+1}', color=colors[mode])
-    plt.xlabel(r'Number of Steps', fontsize=15)
-    plt.tick_params(axis='both', labelsize=13)
-    plt.legend()
+    plt.xlabel(r'Number of Steps', fontsize=16)
+    plt.tick_params(axis='both', labelsize=14)
+    plt.legend(fontsize=12)
 
     plt.tight_layout()
     plt.show()
@@ -431,81 +450,3 @@ def draw_system_and_matrix(N, h, print_latex_matrix=False, plot_system=True):
         plt.title(f"{N}x{N} Square Membrane", fontsize=19)
         plt.tight_layout()
         plt.show()
-
-
-# draw_system_and_matrix(4, 1, False, True)
-
-######### MAKE ANIMATION OF EIGENMODES ###############
-# c = 1
-# L = 1
-# h = 0.01
-# N = int(L/h) - 1
-# total_time = np.linspace(0, 20*np.pi, 100)
-# M_square = construct_M_square(N, h)
-# lamda, v = linalg.eigs(M_square, k=6, which='SM')
-# idx = np.flip(np.argsort(np.real(lamda)))
-# lamda = lamda[idx]
-# v = v[:, idx]
-# time_dependent_modes(total_time, c, lamda, v, N, mode_number=5)
-
-
-########## PLOT SPECTRUM OF EIGENFREQUENCIES VS. SYSTEM SIZE ################
-# Ls = np.linspace(0.25, 2, 10)
-# h = 0.01
-# spectrum_vs_L(Ls, h, 'square')
-# spectrum_vs_L(Ls, h, 'rectangle')
-# spectrum_vs_L(Ls, h, 'circle')
-
-
-
-
-########## PLOT SPECTRUM OF EIGENFREQUENCIES VS. NUMBER OF DISCRETIZATION POINTS #############
-# Ns = np.linspace(5, 50, 10)
-# L = 1.0
-# spectrum_vs_num_steps(Ns, L, 'square')
-# spectrum_vs_num_steps(Ns, L, 'rectangle')
-# spectrum_vs_num_steps(Ns, L, 'circle')
-
-
-########## PLOT EIGENMODES AT DIFFERENT FREQUENCIES ############
-# L = 1
-# h = 0.01
-# N = int(L/h) - 1
-# M_square = construct_M_square(N, h)
-# lamda, v = linalg.eigs(M_square, k=4, which='SM')
-# plot_eigenvectors(lamda, v, grid_shape=(N,N), L=L)
-
-# M_circle = construct_M_circle(N, h, L)
-# lamda, v = linalg.eigs(M_circle, k=8, which='SM')
-# plot_eigenvectors(lamda, v, grid_shape=(N,N), L=L, freqs_of_interest=[1, 3, 5, 7])
-
-# L = 1
-# hx = 0.01
-# hy = 0.02
-# Nx = int(L/hx) - 1
-# Ny = int(2*L/hy) - 1
-# M_rec = construct_M_rec(Nx, Ny, hx, hy)
-# lamda, v = linalg.eigs(M_rec, k=4, which='SM')
-# plot_eigenvectors(lamda, v, grid_shape=(Ny, Nx), L=L, shape='rectangle')
-
-
-
-
-########## PLOT PERFORMANCE COMPARISON OF eig() vs. eigs() #############
-# Ns = np.linspace(10, 20, 10)
-# num_runs = 25
-# mean_eig, CI_eig, mean_eigs, CI_eigs = performance_compare(Ns, num_runs)
-
-# plt.figure(figsize=(7, 5), dpi=300)
-# plt.title('Performance Comparison of eig() and eigs()', fontsize=17)
-# plt.scatter(Ns, mean_eig, color='blue', label='eig() times')
-# plt.fill_between(Ns, mean_eig - CI_eig, mean_eig + CI_eig, color='blue', alpha=0.5)
-
-# plt.scatter(Ns, mean_eigs, color='red', label='eigs() times')
-# plt.fill_between(Ns, mean_eigs - CI_eigs, mean_eigs + CI_eigs, color='red', alpha=0.5)       
-
-# plt.xlabel(r'System Size $N$', fontsize=15)
-# plt.ylabel(r'Execution Time [ms]', fontsize=15)
-# plt.legend()
-
-# plt.show()
