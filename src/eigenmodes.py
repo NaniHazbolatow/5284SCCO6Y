@@ -211,7 +211,7 @@ def performance_compare(Ns, num_runs, plot=False):
         plt.scatter(Ns, mean_eigs_long, color='orange', label='eigs(k=max) times')
         plt.fill_between(Ns, mean_eigs_long - CI_eigs_long, mean_eigs_long + CI_eigs_long, color='orange', alpha=0.5)  
 
-        plt.xlabel('System Size', fontsize=15)
+        plt.xlabel('Grid Size', fontsize=15)
         plt.ylabel(r'Execution Time [ms]', fontsize=15)
         plt.tick_params('both', labelsize=12)
         plt.legend(fontsize=13)
