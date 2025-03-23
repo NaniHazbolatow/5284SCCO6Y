@@ -42,13 +42,17 @@ def leapfrog_harmonic_oscillator(m, k, x0, v0, dt, T, driving_force=None):
     return x, v, energy, t
 
 def plot_harmonic_oscillator(Ks, Xs, Vs, t):
+    colors = ['gold', 'orange', 'red', 'black']
     fig, axs = plt.subplots(2, 1, figsize=(16, 4))
     for i in range(len(Xs)):
-        axs[0].plot(t, Xs[i], label=f'K={Ks[i]}')
-        axs[1].plot(t, Vs[i], label=f'K={Ks[i]}')
+        axs[0].plot(t, Xs[i], label=f'K={Ks[i]}', color=colors[i])
+        axs[1].plot(t, Vs[i], label=f'K={Ks[i]}', color=colors[i])
     axs[0].set_ylabel('Position', fontsize=17)
     axs[1].set_ylabel('Velocity', fontsize=17)
     axs[1].set_xlabel('Time', fontsize=17)
+    axs[0].tick_params(axis='both', labelsize=15)
+    axs[1].tick_params(axis='both', labelsize=15)
+
 
     handles, labels = axs[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc='lower right', fontsize=15)
@@ -56,7 +60,6 @@ def plot_harmonic_oscillator(Ks, Xs, Vs, t):
     title="One-Dimensional Harmonic Oscillator using Leapfrog for Different Spring Constants"
     fig.suptitle(f"{title}", fontsize=19)
     plt.tight_layout()
-    plt.tick_params(axis='both', labelsize=13)
 
     plt.show()
 
@@ -117,13 +120,13 @@ def compare_energy_conservation(m, k, x0, v0, dt, T):
     plt.figure(figsize=(16, 4))
     
     # Energy plot
-    plt.plot(leap_t, leap_energy, label='Leapfrog')
-    plt.plot(rk45_t, rk45_energy, '--', label='RK45')
+    plt.plot(leap_t, leap_energy, label='Leapfrog', color='orange')
+    plt.plot(rk45_t, rk45_energy, '--', label='RK45', color='red')
     plt.xlabel('Time', fontsize=17)
     plt.ylabel('Energy', fontsize=17)
-    plt.legend()
+    plt.legend(loc='lower right', fontsize=15)
     plt.title('Energy Conservation Comparison (Leapfrog vs. RK45)', fontsize=19)
-    plt.tick_params(axis='both', labelsize=13)
+    plt.tick_params(axis='both', labelsize=15)
     plt.tight_layout()
     plt.show()
 
@@ -153,17 +156,23 @@ def driven_oscillator_analysis(m, k, x0, v0, dt, T, driving_amplitudes, frequenc
             start_idx = int(len(t) * 0.5)  # Discard first half as transient
             
             plt_idx = i * len(frequency_ratios) + j + 1
-            plt.subplot(len(driving_amplitudes), len(frequency_ratios), plt_idx)
-            plt.plot(x[start_idx:], v[start_idx:])
-            plt.xlabel('Position', fontsize=17)
-            plt.ylabel('Velocity',fontsize=17)
+            ax = plt.subplot(len(driving_amplitudes), len(frequency_ratios), plt_idx)
+            plt.plot(x[start_idx:], v[start_idx:], color='orange')
+            
+            # Only add labels for left and bottom edge subplots
+            if j == 0:  # leftmost subplot
+                plt.ylabel('Velocity', fontsize=17)
+            if i == len(driving_amplitudes) - 1:  # bottom subplot
+                plt.xlabel('Position', fontsize=17)
+                
             plt.title(f'A={amp}, ω/ω₀={ratio:.2f}', fontsize=18)
-            plt.tick_params(axis='both', labelsize=13)
-            plt.grid(True)
+            plt.tick_params(axis='both', labelsize=15)
             
             # Add markers to show direction
             idx = np.linspace(start_idx, len(t)-1, 20).astype(int)
-            plt.plot(x[idx], v[idx], 'r.', markersize=5)
+            plt.plot(x[idx], v[idx], 'r.', markersize=10)
+            plt.plot(x[idx[0]], v[idx[0]], 'k.', markersize=12)
+
     
     plt.tight_layout()
     plt.suptitle('Phase Plots for Driven Harmonic Oscillator', fontsize=19)
