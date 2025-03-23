@@ -23,6 +23,6 @@ The animations of the gray-scott model can be found in the last four cells of th
 ## Eigenmodes, Steady-state Systems, and efficient time integration
 The main python notebook contains all the plots and animations created using the code from the src folder.
 *  [eigenmodes.py](src/eigenmodes.py): contains all the code for the generation of the sparse matrices, and the plots of the membranes.
-*  
+*  [steadystate.py](src/steadystate.py): contains all the code for the direct solver technique used to solve and plot the diffusive steady state in a circular domain.
 *  [leapfrog.py](src/leapfrog.py): contains all the code for the efficient time integration using the leapfrog method.
 The animations of the vibrating membranes can be found in the folder `Animations_Membrane`.
